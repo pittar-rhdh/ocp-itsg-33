@@ -96,7 +96,7 @@ Protected B workloads at medium integrity and medium availability.
 | **Public Zone** | Outside the cluster |
 | **Public Access Zone (PAZ)** | An external load balancer or WAF in front of a **dedicated IngressController** (for example, `paz`) on infra nodes. Only routes labelled for the PAZ are admitted (route sharding). |
 | **Operations Zone (OZ)** | Default `IngressController` for internal users. Most worker nodes and tenant namespaces. |
-| **Restricted Zone (RZ)** | Worker pools or separate clusters for sensitive back-end services and data stores. Reached only through OZ services via `NetworkPolicy` / `AdminNetworkPolicy`. |
+| **Restricted Zone (RZ)** | A dedicated **ClusterUserDefinedNetwork** (CUDN) for RZ namespaces, a dedicated worker pool, or a separate cluster for sensitive back-end services and data stores. See the [network isolation model](#network-isolation-model). |
 | **Management Restricted Zone (MRZ)** | API server endpoint (not exposed to the PAZ), bastions, the hub cluster, the SIEM, the PKI, and the IdP |
 
 Design notes:
@@ -112,8 +112,102 @@ Design notes:
   configuration).
 - **East-west encryption.** Turn on OVN-Kubernetes **IPsec** (`Full` mode) where node-to-node
   traffic crosses untrusted network segments, or where your TRA requires it (SC-8).
-- **User-defined networks** (UDN / ClusterUserDefinedNetwork) can give tenants isolated
-  layer 2 or layer 3 networks when namespace-level `NetworkPolicy` is not strong enough.
+- **User-defined networks** (UDN / ClusterUserDefinedNetwork) give zones or tenants isolated
+  layer 2 or layer 3 networks when namespace-level `NetworkPolicy` is not strong enough. See the
+  next section.
+
+## Network isolation model
+
+OpenShift 4.22 offers three tiers of network isolation for workloads. Choose a tier for each
+security zone or tenant, and record the choice as architecture decision **AD-09**.
+
+| Tier | Mechanism | Isolation strength | Typical use |
+|---|---|---|---|
+| **1. Policy isolation** | All namespaces on the default cluster network. Separation comes from `BaselineAdminNetworkPolicy` default-deny, `AdminNetworkPolicy` guardrails, and namespace `NetworkPolicy`. | Depends on policy being correct. A wrong `NetworkPolicy` in a tenant namespace can open a path. | Tenants in the same zone and at the same sensitivity level |
+| **2. Network isolation** | Each zone (or tenant) gets its own **primary `ClusterUserDefinedNetwork`**. Separate primary networks are isolated by OVN-Kubernetes by default. | Separation is part of the network topology. A `NetworkPolicy` that tries to allow traffic between namespaces on different primary networks **has no effect**. | Separating zones (for example, OZ and RZ) or high-risk tenants inside one cluster |
+| **3. Cluster isolation** | Separate clusters, optionally on separate infrastructure | Strongest. No shared control plane, nodes, or kernel. | Different security domains (for example, Protected B and Unclassified) or production and non-production |
+
+Tiers can be combined. For example, give each zone its own CUDN (tier 2), and inside each zone use
+default-deny `NetworkPolicy` for micro-segmentation (tier 1). Tier 2 does not replace tier 3 where
+your TRA requires separate control planes or kernels.
+
+### Zone-per-CUDN design (tier 2)
+
+```text
++------------------------------------ OpenShift cluster ---------------------------------------+
+|                                                                                               |
+|  CUDN "zone-oz" (primary)              CUDN "zone-rz" (primary)          Default network     |
+|  ns: hr-app, payments-web              ns: payments-db, records-api      ns: openshift-*     |
+|  itsg33/zone=oz                        itsg33/zone=rz                    (platform services) |
+|  NetworkPolicy inside the zone         NetworkPolicy inside the zone                          |
+|           |                                     |                                             |
+|           +--------- no direct path ------------+                                             |
+|           |                                     |                                             |
++-----------|-------------------------------------|---------------------------------------------+
+            |  LoadBalancer services, or BGP route advertisement into per-zone VRFs           
+            v                                     v                                             
+   +--------------------------- Zone Interface Point (departmental firewall) -----------------+
+   |  All OZ <-> RZ traffic is inspected and logged here (ITSP.80.022)                        |
+   +------------------------------------------------------------------------------------------+
+```
+
+Design rules:
+
+- **One primary CUDN per zone.** Each CUDN's `namespaceSelector` matches the zone label (for
+  example, `itsg33/zone: rz`). Never select `default` or `openshift-*` namespaces, and never
+  use an empty selector, which selects every namespace in the cluster.
+- **Decide at namespace creation.** A namespace joins a primary user-defined network only if it
+  has the `k8s.ovn.org/primary-user-defined-network` label **when it's created**. The label
+  can't be added or changed later, and CUDN objects can't be changed after creation. Moving a
+  namespace to a different zone means re-creating it. Create zoned namespaces through GitOps,
+  and enforce the labels with an admission policy (see
+  [AC-4](controls/ac-access-control.md#network-level-segmentation-with-clusteruserdefinednetwork)).
+- **Traffic between zones goes through a Zone Interface Point.** Because separate primary networks
+  can't reach each other inside the cluster, OZ-to-RZ traffic must leave the cluster. It is
+  exposed through a `LoadBalancer` service (for example, MetalLB) or BGP route advertisement, and
+  passes through the departmental firewall. This matches the ITSP.80.022 requirement that traffic
+  between zones crosses a ZIP.
+- **Micro-segmentation inside each zone.** Namespaces on the same CUDN can reach each other unless
+  `NetworkPolicy` stops them. Keep the default-deny project template.
+
+Limitations to plan for (from the 4.22 documentation):
+
+| Limitation | Design consequence |
+|---|---|
+| **Routes are listed as not supported** on primary user-defined networks (Layer2 and Layer3) in the 4.22 "UserDefinedNetwork and NetworkAttachmentDefinition support matrix" | Keep **PAZ-facing web front ends on the default network** behind the sharded `paz` IngressController. Put back ends in the CUDN zones. Expose CUDN workloads with `LoadBalancer` services or BGP-advertised pod networks behind the PAZ load balancer or WAF. Check the matrix again for your exact z-stream. |
+| Pods can still reach the Kubernetes API and cluster DNS on the default network | Not a complete air gap. Record this in the SSP. API access is still controlled by RBAC and audited. |
+| Kubelet health probes use the default network | A pod can look healthy while its UDN interface is broken. Add application-level monitoring. |
+| Pods on the default network can't start connections to UDN pods unless the `k8s.ovn.org/open-default-ports` annotation opens specific ports | Platform monitoring can't scrape metrics endpoints on UDN pods unless those ports are opened. Open only the metrics port. |
+| Most default-network services can't be reached, including the internal image registry. Source-to-image builds and `oc new-app` from Git don't work. | Pull images from the departmental registry (Quay). Build images in CI outside the zone (this already matches SA-12). |
+| NodePort isolation isn't guaranteed (a pod can reach a NodePort service on another node) | Don't use `NodePort` services in zoned namespaces. Use `LoadBalancer` services instead. Enforce this with an admission policy or RHACS. |
+| EgressIP limits on Layer2 networks (no default gateway, Google Cloud, multiple gateways) | Use Layer3 topology where tenants need EgressIP, or test Layer2 EgressIP on your platform |
+| When a subnet runs out of addresses, pod creation fails with a generic sandbox error | Size the CUDN subnets for growth. Monitor namespace events. |
+
+> **Policy behaviour still to confirm:** the 4.22 documentation reviewed for this guide doesn't say
+> clearly how `AdminNetworkPolicy`, `BaselineAdminNetworkPolicy`, and `EgressFirewall` apply to pods
+> on primary user-defined networks. (The route advertisement documentation lists `EgressFirewall`
+> and network policies as fully supported with route advertisements.) Test each guardrail on a
+> CUDN namespace before relying on it, and keep the test results as CA-2 evidence.
+
+### Mapping zones onto the physical network with BGP (optional)
+
+On **bare-metal** clusters, OVN-Kubernetes can advertise CUDN pod networks to the data centre
+network over BGP (`RouteAdvertisements`, using FRR):
+
+- **VRF-lite:** each zone's CUDN is advertised into a matching VRF on the provider edge router
+  (`targetVRF: auto`). The departmental firewall then sees real zone addresses and enforces the
+  ZIP between VRFs. VRF-lite needs local gateway mode (`routingViaHost: true`) and doesn't support
+  EgressIP.
+- **BGP EVPN** (new in 4.22): carries primary CUDN traffic over VXLAN to the data centre fabric
+  (`spec.network.transport: EVPN`). Bare metal only. Needs `routingViaHost: true` and
+  `ipForwarding: Global`.
+- **NoOverlay** transport (Technology Preview in 4.22) routes pod traffic directly on the underlay.
+  Not recommended for production Protected B workloads while it is a Technology Preview.
+
+> Check the support status of route advertisements and EVPN in the 4.22 release notes before you
+> design around them. A BGP misconfiguration can disrupt the whole cluster network, so involve
+> the network team and test in a lab first. See the
+> [SC-7 configuration example](controls/sc-system-and-communications-protection.md#sc-7-boundary-protection).
 
 ## Connectivity model
 
@@ -181,3 +275,4 @@ Design notes:
 | AD-06 | Disk encryption key source | TPM2 / Tang (NBDE) / both / cloud-provider encryption |
 | AD-07 | Log destination and retention | SIEM product, retention period, immutability |
 | AD-08 | Telemetry and remote health reporting | Enabled / disabled (data residency review) |
+| AD-09 | Network isolation model (per zone or tenant) | Tier 1 policy isolation / tier 2 CUDN per zone / tier 3 separate cluster; with or without BGP route advertisement (VRF-lite / EVPN) |

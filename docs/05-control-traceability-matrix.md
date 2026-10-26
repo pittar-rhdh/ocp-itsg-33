@@ -21,7 +21,7 @@ selection against your departmental PBMM / Medium Cloud profile.
 | AC-2 | Account Management | Plat/Org | Part | External IdP, group-based RBAC, kubeadmin removed, self-provisioning disabled | CO, ACM | [AC-2](controls/ac-access-control.md#ac-2-account-management) |
 | AC-2(4) | Automated Audit Actions | Plat | Full | API audit of User/Group/RoleBinding changes | CO | [AC-2](controls/ac-access-control.md#ac-2-account-management) |
 | AC-3 | Access Enforcement | Plat | Full | RBAC, SCC, PSA, SELinux, ValidatingAdmissionPolicy | CO, ACS | [AC-3](controls/ac-access-control.md#ac-3-access-enforcement) |
-| AC-4 | Information Flow Enforcement | Plat/Ten | Part | NetworkPolicy, ANP/BANP, EgressFirewall, ingress sharding | CO, ACS | [AC-4](controls/ac-access-control.md#ac-4-information-flow-enforcement) |
+| AC-4 | Information Flow Enforcement | Plat/Ten | Part | NetworkPolicy, ANP/BANP, EgressFirewall, ingress sharding, primary CUDN per zone | CO, ACS | [AC-4](controls/ac-access-control.md#ac-4-information-flow-enforcement) |
 | AC-5 | Separation of Duties | Plat/Org | Part | Role matrix mapped to IdP groups, GitOps two-person review | ACM | [AC-5](controls/ac-access-control.md#ac-5-separation-of-duties) |
 | AC-6 | Least Privilege | Plat/Ten | Part | restricted-v2 SCC, minimal cluster-admin, workload securityContext | CO, ACS | [AC-6](controls/ac-access-control.md#ac-6-least-privilege) |
 | AC-7 | Unsuccessful Logon Attempts | Org | Full | IdP lockout | — | [AC-7](controls/ac-access-control.md#ac-7-unsuccessful-logon-attempts) |
@@ -124,10 +124,10 @@ selection against your departmental PBMM / Medium Cloud profile.
 
 | Control | Name | Resp. | Inherit | OpenShift implementation | Auto | Guide |
 |---|---|---|---|---|---|---|
-| SC-2/SC-3 | Application Partitioning / Security Function Isolation | Plat | Full | Control plane, infra, and worker separation | — | [SC-2](controls/sc-system-and-communications-protection.md#sc-2-application-partitioning-sc-3-security-function-isolation) |
-| SC-4 | Information in Shared Resources | Plat | Full | SELinux MCS, per-PVC volumes, dedicated pools | CO | [SC-4](controls/sc-system-and-communications-protection.md#sc-4-information-in-shared-resources) |
+| SC-2/SC-3 | Application Partitioning / Security Function Isolation | Plat | Full | Control plane, infra, and worker separation; tenant zones on CUDNs apart from the platform network | — | [SC-2](controls/sc-system-and-communications-protection.md#sc-2-application-partitioning-sc-3-security-function-isolation) |
+| SC-4 | Information in Shared Resources | Plat | Full | SELinux MCS, per-PVC volumes, CUDN network separation, dedicated pools | CO | [SC-4](controls/sc-system-and-communications-protection.md#sc-4-information-in-shared-resources) |
 | SC-5 | Denial of Service Protection | Plat/Inf | Part | Quotas, APF, router rate limits | CO | [SC-5](controls/sc-system-and-communications-protection.md#sc-5-denial-of-service-protection) |
-| SC-7 | Boundary Protection | Plat/Inf | Part | Zoned IngressControllers, proxy, EgressIP, ANP/BANP | CO, ACM | [SC-7](controls/sc-system-and-communications-protection.md#sc-7-boundary-protection) |
+| SC-7 | Boundary Protection | Plat/Inf | Part | Zoned IngressControllers, CUDN per zone with ZIP between zones, BGP VRF-lite/EVPN (optional), proxy, EgressIP, ANP/BANP | CO, ACM | [SC-7](controls/sc-system-and-communications-protection.md#sc-7-boundary-protection) |
 | SC-8 | Transmission Confidentiality and Integrity | Plat/Ten | Part | TLS profiles, IPsec, re-encrypt routes | CO | [SC-8](controls/sc-system-and-communications-protection.md#sc-8-transmission-confidentiality-and-integrity) |
 | SC-10 | Network Disconnect | Plat | Full | Token and router timeouts | CO | [SC-10](controls/sc-system-and-communications-protection.md#sc-10-network-disconnect) |
 | SC-12 | Cryptographic Key Management | Plat/Org | Part | Platform PKI rotation, cert-manager, External Secrets | — | [SC-12](controls/sc-system-and-communications-protection.md#sc-12-cryptographic-key-establishment-and-management-sc-17-pki-certificates) |

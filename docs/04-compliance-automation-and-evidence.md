@@ -304,6 +304,15 @@ oc get ingresscontrollers -n openshift-ingress-operator -o yaml \
                                              > "${OUT}/04-configuration/ingresscontrollers.yaml"
 oc get consolenotifications -o yaml          > "${OUT}/04-configuration/consolenotifications.yaml"
 
+# 04 — network isolation (AC-4, SC-4, SC-7)
+oc get clusteruserdefinednetworks,userdefinednetworks -A -o yaml \
+                                             > "${OUT}/04-configuration/user-defined-networks.yaml"
+oc get ns -L itsg33/zone,k8s.ovn.org/primary-user-defined-network \
+                                             > "${OUT}/04-configuration/namespace-zones.txt"
+oc get adminnetworkpolicies,baselineadminnetworkpolicies -o yaml \
+                                             > "${OUT}/04-configuration/admin-network-policies.yaml"
+oc get routeadvertisements -o yaml           > "${OUT}/04-configuration/routeadvertisements.yaml" 2>/dev/null || true
+
 # 05 — RBAC (AC-2, AC-5, AC-6)
 oc get clusterrolebindings -o json \
   | jq -r '.items[] | select(.roleRef.name=="cluster-admin")

@@ -20,6 +20,10 @@
   (separate hostnames, IngressControllers, and zones).
 - Security functions (Compliance Operator, File Integrity Operator, RHACS, logging collectors) run
   in dedicated namespaces that tenants can't access.
+- Platform namespaces (`openshift-*`) always stay on the default cluster network. Tenant zones can
+  be put on their own primary `ClusterUserDefinedNetwork`, which keeps tenant traffic apart from
+  platform traffic at the network level (see
+  [network isolation model](../02-reference-architecture.md#network-isolation-model)).
 
 **Configuration example — move ingress routers to infra nodes:**
 
@@ -52,8 +56,13 @@ spec:
 - Storage provisioners give each `PersistentVolumeClaim` its own volume. Set the reclaim policy
   to `Delete` and make sure the storage backend wipes freed volumes, or use encrypted volumes with
   per-volume keys.
-- Where your TRA says namespace isolation isn't enough, use **dedicated node pools** or
-  **separate clusters** for each sensitivity level.
+- **Network:** pods on different primary `ClusterUserDefinedNetwork`s don't share a layer 2 or layer 3
+  segment, and can use overlapping address ranges. This stops traffic between zones that share
+  nodes from leaking.
+- Where your TRA says namespace isolation isn't enough, use the tiers in the
+  [network isolation model](../02-reference-architecture.md#network-isolation-model):
+  **CUDN per zone** for network separation, plus **dedicated node pools** (separate kernels and
+  nodes) or **separate clusters** for each sensitivity level.
 
 ---
 
@@ -103,7 +112,7 @@ spec:
 |---|---|
 | **Responsibility** | Platform, Infrastructure (perimeter firewalls), Org (zone design) |
 | **Inheritable by tenants** | Partial |
-| **OpenShift capabilities** | Zone-specific IngressControllers (route sharding), `EgressFirewall`, `EgressIP`, ANP/BANP, cluster-wide proxy, private API endpoint |
+| **OpenShift capabilities** | Zone-specific IngressControllers (route sharding), `ClusterUserDefinedNetwork` per zone, BGP `RouteAdvertisements` (VRF-lite / EVPN), `EgressFirewall`, `EgressIP`, ANP/BANP, cluster-wide proxy, private API endpoint |
 | **Automated check** | Compliance Operator (`ocp4-configure-network-policies*`), ACM policy |
 
 **Implementation guidance:**
@@ -118,6 +127,16 @@ spec:
   (Org).
 - **SC-7(8) Route traffic to authenticated proxy servers:** set up the cluster-wide proxy for
   platform egress. Tenants that need internet access use the proxy too.
+- **Internal zone boundaries:** when zones share a cluster, put each zone on its own primary
+  `ClusterUserDefinedNetwork` (see [AC-4](ac-access-control.md#network-level-segmentation-with-clusteruserdefinednetwork)).
+  There is then no direct path between zones inside the cluster, and traffic between zones must
+  cross the departmental Zone Interface Point. On bare metal, BGP route advertisement can put each
+  zone's CUDN in its own VRF (example below). The perimeter firewall then sees and filters real
+  zone addresses.
+- **PAZ ingress and CUDNs:** the 4.22 support matrix lists Routes as not supported on primary
+  user-defined networks. Keep PAZ-facing front ends on the default network behind the `paz`
+  IngressController. Or expose CUDN workloads through `LoadBalancer` services or BGP-advertised
+  pod networks behind the PAZ load balancer or WAF.
 
 **Configuration example — PAZ IngressController with route sharding:**
 
@@ -191,6 +210,87 @@ spec:
 
 > Nodes that may host an egress IP need the `k8s.ovn.org/egress-assignable: ""` label.
 
+**Configuration example — advertise zone CUDNs into per-zone VRFs (VRF-lite, bare metal only):**
+
+> **Illustrative.** Route advertisement is supported only on bare metal and needs BGP to be set up
+> on the data centre network first. A misconfiguration can disrupt the cluster network. Check the
+> support status and exact fields against the 4.22 "Route advertisements" and "BGP routing"
+> documentation, and test in a lab first.
+
+```bash
+# 1. Enable the FRR routing provider and route advertisements.
+#    VRF-lite also needs local gateway mode (routingViaHost).
+oc patch networks.operator.openshift.io cluster --type=merge -p '{
+  "spec": {
+    "additionalRoutingCapabilities": {"providers": ["FRR"]},
+    "defaultNetwork": {"ovnKubernetesConfig": {
+      "routeAdvertisements": "Enabled",
+      "gatewayConfig": {"routingViaHost": true}
+    }}
+  }
+}'
+```
+
+```yaml
+# 2. BGP sessions to the provider edge router, one per zone VRF.
+#    VRF names must match the CUDN names (15 characters or fewer).
+apiVersion: frrk8s.metallb.io/v1beta1
+kind: FRRConfiguration
+metadata:
+  name: itsg33-zone-peers
+  namespace: openshift-frr-k8s
+  labels:
+    itsg33/bgp: zone-peers
+spec:
+  bgp:
+    routers:
+      - asn: 64512
+        vrf: zone-oz
+        neighbors:
+          - address: 192.168.110.1        # PE router, OZ VRF (VLAN 110)
+            asn: 64600
+            toReceive:
+              allowed:
+                mode: filtered
+                prefixes:
+                  - prefix: 10.150.0.0/16  # Only what the ZIP allows (here, the RZ range)
+      - asn: 64512
+        vrf: zone-rz
+        neighbors:
+          - address: 192.168.120.1        # PE router, RZ VRF (VLAN 120)
+            asn: 64600
+---
+# 3. Advertise the pod networks of every CUDN labelled for advertisement into its matching VRF.
+apiVersion: k8s.ovn.org/v1
+kind: RouteAdvertisements
+metadata:
+  name: itsg33-zone-vrfs
+spec:
+  targetVRF: auto                         # Each CUDN is advertised into the VRF with the same name
+  advertisements:
+    - PodNetwork
+  networkSelectors:
+    - networkSelectionType: ClusterUserDefinedNetworks
+      clusterUserDefinedNetworkSelector:
+        networkSelector:
+          matchLabels:
+            itsg33/advertise: "true"
+  nodeSelector: {}                        # PodNetwork advertisement requires all nodes
+  frrConfigurationSelector:
+    matchLabels:
+      itsg33/bgp: zone-peers
+```
+
+Notes for assessors and network teams:
+
+- OZ-to-RZ traffic now crosses the PE router and the departmental firewall between the two VRFs.
+  That firewall is the ZIP, and its rule set and logs are the SC-7 evidence for the boundary.
+- VRF-lite doesn't support EgressIP. EgressIPs from Layer2 CUDNs aren't advertised. Plan egress
+  identification by zone subnet instead.
+- **BGP EVPN** (new in 4.22, bare metal only) is an alternative to VRF-lite. It sets
+  `spec.network.transport: EVPN` on the CUDN, and needs `routingViaHost: true` and
+  `ipForwarding: Global`. See "BGP EVPN for user-defined networks" in the 4.22 documentation.
+
 **Evidence:**
 
 ```bash
@@ -198,9 +298,17 @@ oc get ingresscontrollers -n openshift-ingress-operator -o yaml
 oc get routes -A -l itsg33/zone=paz
 oc get proxy cluster -o yaml
 oc get egressips
+oc get clusteruserdefinednetworks --show-labels
+oc get routeadvertisements -o yaml                          # If BGP is used
+oc get frrconfigurations -n openshift-frr-k8s -o yaml       # If BGP is used
 ```
 
-Also collect the perimeter firewall rule set and the network flow matrix.
+Also collect:
+
+- the perimeter firewall rule set and the network flow matrix,
+- the ZIP firewall rules between zone VRFs (if BGP is used), and
+- the [AC-4 negative connectivity test](ac-access-control.md#network-level-segmentation-with-clusteruserdefinednetwork)
+  results.
 
 ---
 

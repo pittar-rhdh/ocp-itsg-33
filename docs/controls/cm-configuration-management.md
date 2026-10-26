@@ -182,6 +182,15 @@ spec:
 > not used. Instead, put the same defaults in a Kustomize component, or enforce them with ACM
 > policies (for example, a `ConfigurationPolicy` with `namespaceSelector` that requires a
 > default-deny `NetworkPolicy` in every tenant namespace).
+>
+> **Zoned namespaces (CUDN):** the network a namespace uses is fixed when it's created. The
+> `k8s.ovn.org/primary-user-defined-network` label can't be added later. The project template
+> above creates namespaces on the default network, so create namespaces for CUDN zones through
+> GitOps with the zone and primary network labels already set (see
+> [AC-4](ac-access-control.md#network-level-segmentation-with-clusteruserdefinednetwork)). Record the
+> zone of each namespace in the baseline. Because `ClusterUserDefinedNetwork` objects can't be
+> changed after creation, changing a zone's subnet means a planned re-creation under change
+> control (CM-3).
 
 **Evidence:**
 

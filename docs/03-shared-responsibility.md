@@ -62,7 +62,7 @@ example for some controls:
 | Control | Inheritance | What the tenant still does |
 |---|---|---|
 | AC-2 Account Management | Partial | Manage application-level accounts. Request namespace RBAC through the platform process. |
-| AC-4 Information Flow Enforcement | Partial | Define namespace `NetworkPolicy` for application tiers. The platform supplies default-deny and zone ANPs. |
+| AC-4 Information Flow Enforcement | Partial | Define namespace `NetworkPolicy` for application tiers. The platform supplies default-deny, zone ANPs, and a primary CUDN per zone. Request the right zone when the namespace is created, because it can't be changed later. |
 | AU-2 / AU-12 Auditable Events / Audit Generation | Partial | Write application security events to stdout/stderr in a structured format. |
 | AU-9 Protection of Audit Information | Full | — |
 | CM-6 Configuration Settings | Partial | Harden container images and manifests (non-root, read-only root filesystem, no privilege escalation). |

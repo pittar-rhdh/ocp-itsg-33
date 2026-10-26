@@ -189,7 +189,7 @@ oc auth can-i --list --as=<tenant-user> -n <tenant-namespace>
 |---|---|
 | **Responsibility** | Platform (cluster-wide guardrails), Tenant (application flows) |
 | **Inheritable by tenants** | Partial |
-| **OpenShift capabilities** | `NetworkPolicy`, `AdminNetworkPolicy`, `BaselineAdminNetworkPolicy`, `EgressFirewall`, `EgressIP`, ingress sharding, user-defined networks |
+| **OpenShift capabilities** | `NetworkPolicy`, `AdminNetworkPolicy`, `BaselineAdminNetworkPolicy`, `EgressFirewall`, `EgressIP`, ingress sharding, `ClusterUserDefinedNetwork` (primary networks per zone) |
 | **Automated check** | Compliance Operator (`ocp4-configure-network-policies*` rules), RHACS network graph |
 
 **Control intent (summary):** Enforce approved authorizations for controlling the flow of
@@ -207,6 +207,10 @@ information within the system and between interconnected systems.
   example, a database in the RZ or an approved SaaS endpoint).
 - **Zone separation:** make PAZ-facing routes go only through the `paz` IngressController (see
   [architecture](../02-reference-architecture.md#network-security-zones-itsp80022)).
+- **Network-level zone isolation:** where policy alone isn't enough, put each zone on its own
+  primary `ClusterUserDefinedNetwork` (see
+  [below](#network-level-segmentation-with-clusteruserdefinednetwork)). With this, a wrong tenant
+  `NetworkPolicy` can't open a path between zones.
 
 **Configuration example — baseline default-deny with platform guardrails:**
 
@@ -289,7 +293,118 @@ spec:
         cidrSelector: 0.0.0.0/0
 ```
 
+#### Network-level segmentation with ClusterUserDefinedNetwork
+
+Where policy-based isolation isn't strong enough (for example, between the OZ and RZ), give each
+zone its own **primary `ClusterUserDefinedNetwork`**. This is tier 2 of the
+[network isolation model](../02-reference-architecture.md#network-isolation-model). OVN-Kubernetes
+isolates separate primary networks by default. A tenant `NetworkPolicy` that tries to allow traffic
+between namespaces on different primary networks has no effect. Traffic between zones must leave
+the cluster and pass through the departmental Zone Interface Point.
+
+**Configuration example — RZ zone network and an RZ namespace:**
+
+```yaml
+apiVersion: k8s.ovn.org/v1
+kind: ClusterUserDefinedNetwork
+metadata:
+  name: zone-rz                         # 15 characters or fewer if it will map to a VRF (see SC-7)
+  labels:
+    itsg33/advertise: "true"            # Only needed for BGP route advertisement
+  annotations:
+    itsg33/controls: "AC-4,SC-7,SC-4"
+spec:
+  namespaceSelector:
+    matchLabels:
+      itsg33/zone: rz                   # Never an empty selector; never default or openshift-*
+  network:
+    topology: Layer3
+    layer3:
+      role: Primary
+      subnets:
+        - cidr: 10.150.0.0/16
+          hostSubnet: 24
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: payments-db
+  labels:
+    itsg33/zone: rz
+    itsg33/tenant: "true"
+    data-classification: protected-b
+    k8s.ovn.org/primary-user-defined-network: ""   # Must be present at creation; can't be added later
+```
+
+> Create the CUDN **before** the namespaces it selects, and create namespaces before any pods.
+> OVN-Kubernetes won't move a namespace that already has pods onto a new network. Use `Layer2`
+> topology instead when workloads need persistent IPs (for example, OpenShift Virtualization VMs).
+> In 4.22, `Primary` is the only supported role for CUDNs.
+
+**Configuration example — guardrail that keeps zone labels consistent:**
+
+A namespace labelled for a zone but missing the primary network label would quietly stay on the
+default network, outside the zone. This admission policy blocks that, and stops platform
+namespaces from being put into a zone.
+
+```yaml
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: itsg33-zone-network-consistency
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["namespaces"]
+  validations:
+    - expression: >-
+        !(has(object.metadata.labels) && 'itsg33/zone' in object.metadata.labels &&
+          object.metadata.labels['itsg33/zone'] in ['oz','rz']) ||
+        'k8s.ovn.org/primary-user-defined-network' in object.metadata.labels
+      message: "Namespaces in a CUDN zone (oz, rz) must be created with the k8s.ovn.org/primary-user-defined-network label."
+    - expression: >-
+        !(has(object.metadata.labels) && 'itsg33/zone' in object.metadata.labels) ||
+        !(object.metadata.name == 'default' || object.metadata.name.startsWith('openshift-') ||
+          object.metadata.name.startsWith('kube-'))
+      message: "Platform namespaces must not be assigned to a CUDN zone."
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: itsg33-zone-network-consistency
+spec:
+  policyName: itsg33-zone-network-consistency
+  validationActions: ["Deny", "Audit"]
+```
+
+> Only platform administrators should be able to create `ClusterUserDefinedNetwork` objects or set
+> zone labels on namespaces. Tenants can create namespace-scoped `UserDefinedNetwork` objects if RBAC
+> allows it. Decide whether to allow this, and restrict the `userdefinednetworks` resource if not.
+
 **Evidence:**
+
+```bash
+oc get clusteruserdefinednetworks
+oc get clusteruserdefinednetwork zone-rz -o jsonpath='{.status.conditions}' | jq
+oc get userdefinednetworks -A                                # Tenant-created UDNs (expect none, or approved)
+oc get ns -L itsg33/zone,k8s.ovn.org/primary-user-defined-network
+oc get validatingadmissionpolicy itsg33-zone-network-consistency
+
+# Negative test (CA-2): an OZ pod must NOT reach an RZ pod directly.
+# The UDN IP is in the pod's k8s.ovn.org/pod-networks annotation.
+RZ_IP=$(oc get pod <rz-pod> -n payments-db \
+  -o jsonpath='{.metadata.annotations.k8s\.ovn\.org/pod-networks}' \
+  | jq -r 'to_entries[] | select(.value.role=="primary") | .value.ip_address' | cut -d/ -f1)
+oc exec -n payments-web <oz-pod> -- curl -s -m 5 "http://${RZ_IP}:8080" ; echo "exit=$?"  # Expect a timeout
+```
+
+Keep the output of the negative test, with its date, in the evidence bundle.
+
+**Evidence (all AC-4 mechanisms):**
 
 ```bash
 oc get adminnetworkpolicies,baselineadminnetworkpolicies

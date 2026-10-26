@@ -7,4 +7,24 @@ plugins:
 
 # Note for content editors, edit only the section below
 nav:
-  - ocp-itsg-33 Documentation: index.md
+  - Home: index.md
+  - 01 - ITSG-33 Overview: 01-itsg-33-overview.md
+  - 02 - Reference Architecture: 02-reference-architecture.md
+  - 03 - Shared Responsibility: 03-shared-responsibility.md
+  - 04 - Compliance Automation and Evidence: 04-compliance-automation-and-evidence.md
+  - 05 - Control Traceability Matrix: 05-control-traceability-matrix.md
+  - Control Families:
+      - Overview: controls/index.md
+      - AC - Access Control: controls/ac-access-control.md
+      - AU - Audit and Accountability: controls/au-audit-and-accountability.md
+      - CA - Security Assessment and Authorization: controls/ca-security-assessment-and-authorization.md
+      - CM - Configuration Management: controls/cm-configuration-management.md
+      - CP - Contingency Planning: controls/cp-contingency-planning.md
+      - IA - Identification and Authentication: controls/ia-identification-and-authentication.md
+      - IR - Incident Response: controls/ir-incident-response.md
+      - RA - Risk Assessment: controls/ra-risk-assessment.md
+      - SA - System and Services Acquisition: controls/sa-system-and-services-acquisition.md
+      - SC - System and Communications Protection: controls/sc-system-and-communications-protection.md
+      - SI - System and Information Integrity: controls/si-system-and-information-integrity.md
+      - Operational and Management Families: controls/operational-and-management-families.md
+  - References: references.md

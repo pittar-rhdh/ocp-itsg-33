@@ -1,0 +1,23 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ocp-itsg-33
+  description: Exploring ITSG-33 configuration and compliance for OpenShift.
+  annotations:
+    backstage.io/source-location: url:https://github.com/pittar-rhdh/ocp-itsg-33
+    backstage.io/techdocs-ref: dir:.
+    #argocd/app-name: ocp-itsg-33
+  tags:
+    - java
+    - quarkus
+  links:
+    - url: https://github.com/pittar-rhdh/ocp-itsg-33
+      title: Open in Dev Spaces
+      icon: web
+    - url: https://www.redhat.com/en/blog/channel/hybrid-cloud-infrastructure
+      title: Red Hat Blog
+      icon: web
+spec:
+  type: service
+  lifecycle: production
+  owner: group:default/developers

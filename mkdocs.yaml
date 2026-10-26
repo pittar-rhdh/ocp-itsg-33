@@ -1,0 +1,10 @@
+site_name: ocp-itsg-33
+site_description: Exploring ITSG-33 configuration and compliance for OpenShift.
+repo_url: https://github.com/pittar-rhdh/ocp-itsg-33
+
+plugins:
+  - techdocs-core
+
+# Note for content editors, edit only the section below
+nav:
+  - ocp-itsg-33 Documentation: index.md

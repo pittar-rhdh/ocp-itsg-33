@@ -1,0 +1,7 @@
+{
+  "recommendations": [
+    "redhat.vscode-yaml",
+    "RooVeterinaryInc.roo-cline",
+    "Anthropic.claude-code"
+  ]
+}

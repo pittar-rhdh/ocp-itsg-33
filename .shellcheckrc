@@ -1,0 +1,6 @@
+# Shared ShellCheck settings for every script in this repository.
+external-sources=true
+source-path=SCRIPTDIR
+# Variables come from sourced files (versions.env, settings.env); the
+# misspelling heuristic mis-fires on OCP_* versus OP_* names.
+disable=SC2153

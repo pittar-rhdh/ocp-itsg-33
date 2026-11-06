@@ -1,6 +1,6 @@
 # IA — Identification and Authentication
 
-[← Back to control families](index.md) · [← Back to main](../index.md)
+[← Back to control families](index.md) · [← Back to main](../../index.md)
 
 ---
 

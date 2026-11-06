@@ -1,6 +1,6 @@
 # AU — Audit and Accountability
 
-[← Back to control families](index.md) · [← Back to main](../index.md)
+[← Back to control families](index.md) · [← Back to main](../../index.md)
 
 OpenShift produces several audit streams:
 

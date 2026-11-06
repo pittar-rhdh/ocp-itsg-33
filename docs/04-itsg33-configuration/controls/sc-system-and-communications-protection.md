@@ -1,6 +1,6 @@
 # SC — System and Communications Protection
 
-[← Back to control families](index.md) · [← Back to main](../index.md)
+[← Back to control families](index.md) · [← Back to main](../../index.md)
 
 ---
 
@@ -23,7 +23,7 @@
 - Platform namespaces (`openshift-*`) always stay on the default cluster network. Tenant zones can
   be put on their own primary `ClusterUserDefinedNetwork`, which keeps tenant traffic apart from
   platform traffic at the network level (see
-  [network isolation model](../02-reference-architecture.md#network-isolation-model)).
+  [network isolation model](../../00-architecture/reference-architecture.md#network-isolation-model)).
 
 **Configuration example — move ingress routers to infra nodes:**
 
@@ -60,7 +60,7 @@ spec:
   segment, and can use overlapping address ranges. This stops traffic between zones that share
   nodes from leaking.
 - Where your TRA says namespace isolation isn't enough, use the tiers in the
-  [network isolation model](../02-reference-architecture.md#network-isolation-model):
+  [network isolation model](../../00-architecture/reference-architecture.md#network-isolation-model):
   **CUDN per zone** for network separation, plus **dedicated node pools** (separate kernels and
   nodes) or **separate clusters** for each sensitivity level.
 
@@ -585,9 +585,9 @@ oc debug node/<node> -- chroot /host update-crypto-policies --show         # Exp
   platform. See "External encryption key management" in the 4.22 docs.
 - **Node disk encryption:** turn on LUKS for the RHCOS root disk at installation, bound to **TPM2**
   and/or **Tang** (NBDE) servers in the MRZ.
-- **Persistent volumes:** use encrypted storage classes. For example, ODF cluster-wide or per-PV
-  encryption with KMS, cloud provider encryption with customer-managed keys in Canadian regions,
-  or vSphere VM encryption.
+- **Persistent volumes:** use encrypted storage classes. In this reference design, storage comes
+  from enterprise storage through the vendor CSI driver (AD-13): turn on array-level encryption
+  at rest, or CSI driver volume encryption with keys held in the departmental KMS.
 - **Backups** are encrypted at rest in object storage (see CP-9).
 
 **Configuration example — etcd encryption:**

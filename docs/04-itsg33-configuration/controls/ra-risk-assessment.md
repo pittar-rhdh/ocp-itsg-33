@@ -1,6 +1,6 @@
 # RA — Risk Assessment
 
-[← Back to control families](index.md) · [← Back to main](../index.md)
+[← Back to control families](index.md) · [← Back to main](../../index.md)
 
 ---
 
@@ -38,18 +38,22 @@ include:
 |---|---|
 | **Responsibility** | Platform (platform and nodes), Tenant (application images) |
 | **Inheritable by tenants** | Partial (the scanning service is provided; fixing images is the tenant's job) |
-| **OpenShift capabilities** | RHACS (images, nodes, platform CVEs), Quay with Clair, Compliance Operator (configuration), Red Hat Insights Advisor (if enabled) |
+| **OpenShift capabilities** | RHACS with offline vulnerability definitions (images, nodes, platform CVEs), Compliance Operator (configuration). Insights Advisor is not available on the air-gapped high side. |
 | **Automated check** | Yes |
 
 **Implementation guidance:**
 
-- Scan images **in CI** (`roxctl image check` / `roxctl image scan`), **in the registry** (Clair),
-  and **at runtime** (RHACS rescans running images as new CVE data comes in).
+- Scan images **in CI** (`roxctl image check` / `roxctl image scan`), **in the registry** (RHACS
+  registry integration with the mirror registry and the departmental application registry), and
+  **at runtime** (RHACS rescans running images as new CVE data comes in).
 - Scan **nodes and platform components** with RHACS node and platform CVE scanning.
 - Set remediation timelines that match the departmental patch management standard (for example,
   critical in 14 days and high in 30 days, or as the departmental policy requires).
-- **RA-5(2) Update by frequency:** RHACS updates vulnerability data continuously (connected) or
-  through offline bundles (disconnected). Record the update frequency for disconnected clusters.
+- **RA-5(2) Update by frequency:** On the air-gapped high side, RHACS vulnerability data comes from
+  offline bundles transferred from the low side. Red Hat's RHACS offline-mode documentation says to
+  upload new definitions at least once per day. Record the import frequency you can actually achieve
+  in the Day 2 SOPs, and record any gap from daily as a residual risk in the TRA; the frequency
+  bounds how quickly new CVEs are detected.
 - **RA-5(5) Privileged access:** RHACS uses sensors with cluster-level read access, so scanning is
   credentialed.
 

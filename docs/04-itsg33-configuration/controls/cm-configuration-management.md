@@ -1,6 +1,6 @@
 # CM — Configuration Management
 
-[← Back to control families](index.md) · [← Back to main](../index.md)
+[← Back to control families](index.md) · [← Back to main](../../index.md)
 
 OpenShift is managed through declarative APIs and operators. This fits configuration management
 controls well. The reference architecture keeps **all cluster configuration in Git** and applies
@@ -279,7 +279,7 @@ shows production changes made only by the GitOps service account.
 - **CM-6(1) Automated central management:** ACM policies across the fleet.
 - Record deviations with a rationale (`TailoredProfile.disableRules[].rationale`).
 
-**Evidence:** see [04 — Compliance automation](../04-compliance-automation-and-evidence.md).
+**Evidence:** see [04 — Compliance automation](../../05-compliance-evidence/compliance-automation-and-evidence.md).
 
 ---
 

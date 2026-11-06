@@ -1,6 +1,6 @@
-# 01 — ITSG-33 Overview
+# ITSG-33 Overview
 
-[← Back to main](index.md)
+[← Back to main](../index.md)
 
 ## What ITSG-33 is
 
@@ -36,7 +36,7 @@ Keep the differences in mind:
   timeouts). Use the values set in your departmental profile, not the NIST defaults.
 - Some control enhancements selected in the NIST Moderate baseline are not selected in the PBMM
   profile, and the reverse also happens. Treat the Compliance Operator profile as a **starting
-  point** and tailor it (see [04 — Compliance automation](04-compliance-automation-and-evidence.md)).
+  point** and tailor it (see [Compliance automation](../05-compliance-evidence/compliance-automation-and-evidence.md)).
 
 ## Security control profiles
 
@@ -56,12 +56,12 @@ ITSG-33 groups controls into three classes.
 | Class | Families | Where covered |
 |---|---|---|
 | **Technical** | AC, AU, IA, SC | Detailed family documents |
-| **Operational** | AT, CM, CP, IR, MA, MP, PE, PS, SI | CM, CP, IR, SI in detail; others in [operational and management families](controls/operational-and-management-families.md) |
-| **Management** | CA, PL, PM, RA, SA | CA, RA, SA in detail; PL and PM in [operational and management families](controls/operational-and-management-families.md) |
+| **Operational** | AT, CM, CP, IR, MA, MP, PE, PS, SI | CM, CP, IR, SI in detail; others in [operational and management families](../04-itsg33-configuration/controls/operational-and-management-families.md) |
+| **Management** | CA, PL, PM, RA, SA | CA, RA, SA in detail; PL and PM in [operational and management families](../04-itsg33-configuration/controls/operational-and-management-families.md) |
 
 ## Related CCCS and GC guidance
 
-This architecture also draws on these publications (see [References](references.md)):
+This architecture also draws on these publications (see [References](../reference/references.md)):
 
 | Publication | Use in this architecture |
 |---|---|
@@ -94,10 +94,10 @@ Application systems that run on it **inherit** platform controls.
 +--------------------------------------------------------|-----+
                                                          |
 +--------------------------------------------------------|-----+
-| Infrastructure (data centre, vSphere, or cloud region) |     |
-|   - CCCS-assessed cloud services / departmental DC ----+     |
+| Infrastructure (departmental data centre, bare metal)  |     |
+|   - Facilities, hardware, network, storage, shared svcs+     |
 +--------------------------------------------------------------+
 ```
 
-The **[control traceability matrix](05-control-traceability-matrix.md)** shows which controls the
+The **[control traceability matrix](../05-compliance-evidence/control-traceability-matrix.md)** shows which controls the
 platform can offer as inheritable (fully or partly) to application systems.

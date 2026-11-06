@@ -1,6 +1,6 @@
 # CA — Security Assessment and Authorization
 
-[← Back to control families](index.md) · [← Back to main](../index.md)
+[← Back to control families](index.md) · [← Back to main](../../index.md)
 
 The CA family is mostly process-based. OpenShift helps by providing **continuous, automated
 assessment data**, which makes SA&A and ongoing authorization much easier to sustain.
@@ -17,10 +17,10 @@ assessment data**, which makes SA&A and ongoing authorization much easier to sus
 
 **Implementation guidance:**
 
-- Build the assessment plan from the [traceability matrix](../05-control-traceability-matrix.md).
+- Build the assessment plan from the [traceability matrix](../../05-compliance-evidence/control-traceability-matrix.md).
 - Give assessors **read-only** access (`cluster-reader` through the `ocp-security-auditors` group)
   and the evidence bundle described in
-  [04 — Compliance automation](../04-compliance-automation-and-evidence.md#evidence-bundle-structure-proposed).
+  [04 — Compliance automation](../../05-compliance-evidence/compliance-automation-and-evidence.md#evidence-bundle-structure-proposed).
 - **CA-2(1) Independent assessors:** the assessor reviews results that are produced automatically
   and are hard to tamper with (ARF reports with checksums), in addition to doing their own manual
   testing.
@@ -95,7 +95,7 @@ minor version are handled through continuous monitoring (CA-7) and change contro
 |---|---|---|
 | Configuration compliance scan | Compliance Operator | Daily |
 | Fleet policy compliance | ACM governance | Continuous (each policy evaluation interval) |
-| Vulnerability scan of images and nodes | RHACS, Quay/Clair | Continuous / daily |
+| Vulnerability scan of images and nodes | RHACS | Continuous / daily |
 | File integrity check | File Integrity Operator | Every `gracePeriod` (for example, 15 minutes) |
 | Platform health and security alerts | OpenShift Monitoring / Alertmanager | Continuous |
 | Evidence bundle generation | Evidence script / pipeline | Monthly or quarterly |
@@ -159,7 +159,9 @@ Coordinate with Red Hat support policies for testing a supported product.
 
 **Implementation guidance:** Record internal connections between platform components, such as:
 
-- spoke cluster to hub (ACM agent, RHACS Secured Cluster),
+- ACM and RHACS components to the cluster they run on (`local-cluster` agent, RHACS Secured
+  Cluster to Central),
+- provisioner host and cluster to node BMCs (Redfish or IPMI),
 - collector to SIEM, and
 - cluster to mirror registry.
 

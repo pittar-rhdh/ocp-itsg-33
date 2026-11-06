@@ -1,6 +1,6 @@
 # Operational and Management Families (AT, MA, MP, PE, PL, PM, PS)
 
-[← Back to control families](index.md) · [← Back to main](../index.md)
+[← Back to control families](index.md) · [← Back to main](../../index.md)
 
 These families are mainly **organizational** or **infrastructure** responsibilities. This page
 lists the points where the OpenShift platform adds to them or depends on them.
@@ -56,9 +56,9 @@ Record the inheritance in the SSP.
 
 | Control | Platform contribution |
 |---|---|
-| PL-2 System Security Plan | This reference architecture, the traceability matrix, and the architecture decisions (AD-01 to AD-08) form the core of the platform SSP. |
+| PL-2 System Security Plan | This reference architecture, the traceability matrix, and the [architecture decisions](../../00-architecture/architecture-decisions.md) form the core of the platform SSP. |
 | PL-4 Rules of Behaviour | Platform acceptable-use rules for tenants (for example, no privileged workloads without approval, no secrets in images, and image signing required). Show them on the AC-8 banner and in onboarding. |
-| PL-8 Information Security Architecture | [02 — Reference architecture](../02-reference-architecture.md). |
+| PL-8 Information Security Architecture | [02 — Reference architecture](../../00-architecture/reference-architecture.md). |
 
 ---
 

@@ -2,22 +2,28 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: ocp-itsg-33
-  description: Exploring ITSG-33 configuration and compliance for OpenShift.
+  description: >-
+    Reference implementation for installing OpenShift Container Platform 4.22 on bare metal in an
+    air-gapped environment, with ITSG-33 (PBMM) configuration, compliance evidence, and SOPs.
+    Examples only; not validated against a real environment.
   annotations:
     backstage.io/source-location: url:https://github.com/pittar-rhdh/ocp-itsg-33
     backstage.io/techdocs-ref: dir:.
-    #argocd/app-name: ocp-itsg-33
   tags:
-    - java
-    - quarkus
+    - openshift
+    - disconnected
+    - bare-metal
+    - itsg-33
+    - compliance
+    - gitops
   links:
-    - url: https://github.com/pittar-rhdh/ocp-itsg-33
+    - url: https://devspaces.apps.prime.pitt.ca/#https://github.com/pittar-rhdh/ocp-itsg-33
       title: Open in Dev Spaces
       icon: web
-    - url: https://www.redhat.com/en/blog/channel/hybrid-cloud-infrastructure
-      title: Red Hat Blog
-      icon: web
+    - url: https://docs.redhat.com/en/documentation/openshift_container_platform/4.22
+      title: OpenShift 4.22 documentation
+      icon: docs
 spec:
-  type: service
-  lifecycle: production
+  type: documentation
+  lifecycle: experimental
   owner: group:default/developers

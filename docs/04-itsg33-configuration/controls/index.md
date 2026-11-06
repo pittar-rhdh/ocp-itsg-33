@@ -1,6 +1,10 @@
 # Control Family Guidance
 
-[← Back to main](../index.md)
+[← Back to main](../../index.md)
+
+> **Examples only — not validated.** The configuration examples in the family guides are
+> illustrations. They have not been applied to a real OpenShift 4.22 cluster. Check API versions
+> with `oc explain` and test them before use. See [Validation status](../../reference/validation-status.md).
 
 Each family document uses the same structure for every control. This keeps the guidance easy to
 scan and makes it simple to copy into an SSP or SRTM.

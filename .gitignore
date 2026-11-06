@@ -1,33 +1,42 @@
-# Eclipse
-.project
-.classpath
-.settings/
-bin/
-
-# IntelliJ
-.idea
-*.ipr
-*.iml
-*.iws
-
-# NetBeans
-nb-configuration.xml
-
-
-# OSX
-.DS_Store
-
-# Vim
+# Editors / OS
+.idea/
 *.swp
 *.swo
-
-# patch
+.DS_Store
 *.orig
 *.rej
 
-# Maven
-target/
-pom.xml.tag
-pom.xml.releaseBackup
-pom.xml.versionsBackup
-release.properties
+# MkDocs / TechDocs build output
+site/
+
+# ---------------------------------------------------------------------------
+# Air-gap artifacts and secrets: NEVER commit these.
+# ---------------------------------------------------------------------------
+# Pull secrets, registry credentials, kubeconfigs, keys
+pull-secret*.json
+*auth.json
+**/auth/kubeconfig
+**/auth/kubeadmin-password
+kubeconfig*
+*.pem
+*.key
+*.p12
+!**/*.example.*
+
+# Local overrides of the version pins / environment
+versions.local.env
+*.local.env
+
+# oc-mirror workspaces, archives and caches
+**/working-dir/
+**/.oc-mirror/
+*.tar
+mirror_seq*.tar
+
+# openshift-install working directories (contain secrets once generated)
+**/install-dir/
+.openshift_install*
+*.ign
+
+# Evidence bundles (Protected B once populated; store in an approved repository)
+evidence/

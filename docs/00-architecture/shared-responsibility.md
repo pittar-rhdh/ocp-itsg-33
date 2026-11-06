@@ -1,6 +1,6 @@
-# 03 — Shared Responsibility Model
+# Shared Responsibility Model
 
-[← Back to main](index.md)
+[← Back to main](../index.md)
 
 An OpenShift platform meets ITSG-33 controls through a **stack of responsibilities**. To build a
 clear SSP and an inheritance model for application teams, record who owns each control.
@@ -10,14 +10,18 @@ clear SSP and an inheritance model for application teams, record who owns each c
 | Party | Description |
 |---|---|
 | **Red Hat** | Builds and supports the product. Provides secure defaults, security errata, FIPS-capable cryptography, signed content, and product security documentation. |
-| **Infrastructure** | The data centre, hypervisor (vSphere), bare-metal hosting, or cloud provider. Owns physical security, hardware, and underlying network and storage. For public cloud, this means CCCS-assessed services in Canadian regions. |
+| **Infrastructure** | The departmental data centre team. Owns physical security, bare-metal servers and their BMCs and firmware, the data centre network (switches, firewalls, load balancers), and enterprise storage. |
+| **Shared services** | Teams that run the high-side services the platform depends on: Git, IdP, PKI, SIEM, DNS, NTP, and S3-compatible object storage. |
+| **Content transfer** | The people and process that move content from the low side to the high side (media custodians, transfer approvers, or the cross-domain solution operator). |
 | **Platform** | The departmental (or shared services) team that installs, configures, and operates OpenShift. **Most of this guide is aimed at this party.** |
 | **Tenant** | Application teams that deploy workloads on the platform. They inherit platform controls and implement application-level controls. |
 | **Org** | Departmental security programme: policies, training, personnel security, the incident response organization, and the authorizer. |
 
-## Responsibility by control family (self-managed OpenShift)
+## Responsibility by control family
 
-Legend: **P** = primary, **S** = supporting, **I** = inherited / not applicable at this layer
+Legend: **P** = primary, **S** = supporting, **I** = inherited / not applicable at this layer.
+Shared services and content transfer are folded into **Infrastructure** and **Org** in this table;
+see the next section for the air-gap specifics.
 
 | Family | Red Hat | Infrastructure | Platform | Tenant | Org |
 |---|---|---|---|---|---|
@@ -40,19 +44,22 @@ Legend: **P** = primary, **S** = supporting, **I** = inherited / not applicable 
 | SC — System and Communications Protection | S | S | **P** | S | S |
 | SI — System and Information Integrity | **P** (errata) | S | **P** | **P** (images) | S |
 
-## Managed OpenShift (ROSA / ARO / OpenShift Dedicated)
+## Responsibilities specific to the air-gapped, bare-metal design
 
-With a managed offering, Red Hat (together with the cloud provider) takes on part of the
-**Platform** responsibilities. These include control plane operations, upgrades, monitoring of
-cluster health, and parts of incident response. Before relying on inheritance:
+| Area | Primary | Supporting | Notes |
+|---|---|---|---|
+| Choosing what content to mirror (`ImageSetConfiguration`) | Platform | Org (approval) | Changes go through change control (CM-3) |
+| Low-side mirroring and integrity (checksums, signatures) | Platform | Content transfer | SA-12, SI-7 |
+| Media handling and transfer records | Content transfer | Org | MP-2, MP-4, MP-5 |
+| Mirror registry host (OS hardening, patching, backup) | Platform | Infrastructure | CM-6, CP-9, SI-2 |
+| BMC firmware, credentials, and network isolation | Infrastructure | Platform | MA-2, AC-17, SC-7 |
+| Node hardware lifecycle and media sanitization at disposal | Infrastructure | Org | MA-2, MP-6 |
+| Supporting services (Git, IdP, PKI, SIEM, DNS, NTP, S3, storage) | Shared services | Platform | Each service carries its own SA&A; the platform inherits from it |
+| RHACS offline vulnerability feeds and import cadence | Platform | Org | RA-5, SI-2, SI-5 |
+| Support data leaving the high side (`must-gather`) | Platform | Org | Review and sanitize before release (MA-4, MP-5) |
 
-- Get the provider's **CCCS assessment** or equivalent attestation, and check which services and
-  regions were assessed.
-- Check which configuration you can still control (for example, FIPS, etcd encryption, audit log
-  forwarding, and IdP configuration). Some controls in this guide can't be changed or work
-  differently in a managed service.
-- Review **SRE access** to clusters (MA-4, AC-17, PS-7) and the provider's audit log access for
-  that activity.
+> **Managed OpenShift** (ROSA, ARO, OpenShift Dedicated) is out of scope: those services need a
+> connection to Red Hat and the cloud provider and don't fit an air-gapped design.
 
 ## Tenant inheritance model
 
@@ -74,4 +81,4 @@ example for some controls:
 | SI-2 Flaw Remediation | Partial | Rebuild and redeploy images when RHACS reports fixable CVEs. |
 | SI-4 Information System Monitoring | Full | — |
 
-Put the full inheritance view in the [control traceability matrix](05-control-traceability-matrix.md).
+Put the full inheritance view in the [control traceability matrix](../05-compliance-evidence/control-traceability-matrix.md).

@@ -1,6 +1,6 @@
 # SA — System and Services Acquisition
 
-[← Back to control families](index.md) · [← Back to main](../index.md)
+[← Back to control families](index.md) · [← Back to main](../../index.md)
 
 ITSG-33 is based on NIST SP 800-53 Rev 3, so **supply chain protection is covered by SA-12**. There is
 no separate `SR` family.

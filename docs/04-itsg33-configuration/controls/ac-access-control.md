@@ -1,6 +1,6 @@
 # AC — Access Control
 
-[← Back to control families](index.md) · [← Back to main](../index.md)
+[← Back to control families](index.md) · [← Back to main](../../index.md)
 
 Access control in OpenShift has several layers:
 
@@ -206,7 +206,7 @@ information within the system and between interconnected systems.
 - **Egress:** use `EgressFirewall` per namespace to allow only approved external destinations (for
   example, a database in the RZ or an approved SaaS endpoint).
 - **Zone separation:** make PAZ-facing routes go only through the `paz` IngressController (see
-  [architecture](../02-reference-architecture.md#network-security-zones-itsp80022)).
+  [architecture](../../00-architecture/reference-architecture.md#network-security-zones-itsp80022)).
 - **Network-level zone isolation:** where policy alone isn't enough, put each zone on its own
   primary `ClusterUserDefinedNetwork` (see
   [below](#network-level-segmentation-with-clusteruserdefinednetwork)). With this, a wrong tenant
@@ -297,7 +297,7 @@ spec:
 
 Where policy-based isolation isn't strong enough (for example, between the OZ and RZ), give each
 zone its own **primary `ClusterUserDefinedNetwork`**. This is tier 2 of the
-[network isolation model](../02-reference-architecture.md#network-isolation-model). OVN-Kubernetes
+[network isolation model](../../00-architecture/reference-architecture.md#network-isolation-model). OVN-Kubernetes
 isolates separate primary networks by default. A tenant `NetworkPolicy` that tries to allow traffic
 between namespaces on different primary networks has no effect. Traffic between zones must leave
 the cluster and pass through the departmental Zone Interface Point.

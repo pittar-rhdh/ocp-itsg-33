@@ -1,5 +1,5 @@
 site_name: ocp-itsg-33
-site_description: Exploring ITSG-33 configuration and compliance for OpenShift.
+site_description: OpenShift 4.22 on bare metal, air-gapped, configured and evidenced for ITSG-33.
 repo_url: https://github.com/pittar-rhdh/ocp-itsg-33
 
 plugins:
@@ -8,23 +8,50 @@ plugins:
 # Note for content editors, edit only the section below
 nav:
   - Home: index.md
-  - 01 - ITSG-33 Overview: 01-itsg-33-overview.md
-  - 02 - Reference Architecture: 02-reference-architecture.md
-  - 03 - Shared Responsibility: 03-shared-responsibility.md
-  - 04 - Compliance Automation and Evidence: 04-compliance-automation-and-evidence.md
-  - 05 - Control Traceability Matrix: 05-control-traceability-matrix.md
-  - Control Families:
-      - Overview: controls/index.md
-      - AC - Access Control: controls/ac-access-control.md
-      - AU - Audit and Accountability: controls/au-audit-and-accountability.md
-      - CA - Security Assessment and Authorization: controls/ca-security-assessment-and-authorization.md
-      - CM - Configuration Management: controls/cm-configuration-management.md
-      - CP - Contingency Planning: controls/cp-contingency-planning.md
-      - IA - Identification and Authentication: controls/ia-identification-and-authentication.md
-      - IR - Incident Response: controls/ir-incident-response.md
-      - RA - Risk Assessment: controls/ra-risk-assessment.md
-      - SA - System and Services Acquisition: controls/sa-system-and-services-acquisition.md
-      - SC - System and Communications Protection: controls/sc-system-and-communications-protection.md
-      - SI - System and Information Integrity: controls/si-system-and-information-integrity.md
-      - Operational and Management Families: controls/operational-and-management-families.md
-  - References: references.md
+  - 0 - Architecture:
+      - ITSG-33 Overview: 00-architecture/itsg-33-overview.md
+      - Reference Architecture: 00-architecture/reference-architecture.md
+      - Architecture Decisions: 00-architecture/architecture-decisions.md
+      - Shared Responsibility: 00-architecture/shared-responsibility.md
+  - 1 - Content Mirroring:
+      - Overview: 01-mirroring/index.md
+      - Mirror Workstation: 01-mirroring/workstation.md
+      - ImageSetConfiguration: 01-mirroring/imageset-configuration.md
+      - Mirror to Disk: 01-mirroring/mirror-to-disk.md
+      - Packaging and Transfer: 01-mirroring/packaging-and-transfer.md
+      - Ongoing Imports: 01-mirroring/ongoing-imports.md
+  - 2 - High-Side Setup:
+      - Overview: 02-high-side/index.md
+      - Registry Host: 02-high-side/registry-host.md
+      - Accept a Transfer: 02-high-side/accept-transfer.md
+      - Mirror Registry: 02-high-side/mirror-registry.md
+      - Populate the Registry: 02-high-side/populate-registry.md
+  - 3 - Cluster Install:
+      - Overview: 03-cluster-install/index.md
+  - 4 - ITSG-33 Configuration:
+      - Overview: 04-itsg33-configuration/index.md
+      - Control Families:
+          - Overview: 04-itsg33-configuration/controls/index.md
+          - AC - Access Control: 04-itsg33-configuration/controls/ac-access-control.md
+          - AU - Audit and Accountability: 04-itsg33-configuration/controls/au-audit-and-accountability.md
+          - CA - Security Assessment and Authorization: 04-itsg33-configuration/controls/ca-security-assessment-and-authorization.md
+          - CM - Configuration Management: 04-itsg33-configuration/controls/cm-configuration-management.md
+          - CP - Contingency Planning: 04-itsg33-configuration/controls/cp-contingency-planning.md
+          - IA - Identification and Authentication: 04-itsg33-configuration/controls/ia-identification-and-authentication.md
+          - IR - Incident Response: 04-itsg33-configuration/controls/ir-incident-response.md
+          - RA - Risk Assessment: 04-itsg33-configuration/controls/ra-risk-assessment.md
+          - SA - System and Services Acquisition: 04-itsg33-configuration/controls/sa-system-and-services-acquisition.md
+          - SC - System and Communications Protection: 04-itsg33-configuration/controls/sc-system-and-communications-protection.md
+          - SI - System and Information Integrity: 04-itsg33-configuration/controls/si-system-and-information-integrity.md
+          - Operational and Management Families: 04-itsg33-configuration/controls/operational-and-management-families.md
+  - 5 - Compliance and Evidence:
+      - Overview: 05-compliance-evidence/index.md
+      - Compliance Automation and Evidence: 05-compliance-evidence/compliance-automation-and-evidence.md
+      - Control Traceability Matrix: 05-compliance-evidence/control-traceability-matrix.md
+  - 6 - Standard Operating Procedures:
+      - Overview: 06-sops/index.md
+  - Reference:
+      - Versions and Pinned Content: reference/versions.md
+      - Validation Status and Sources: reference/validation-status.md
+      - Backlog and Future Scope: reference/backlog.md
+      - References: reference/references.md

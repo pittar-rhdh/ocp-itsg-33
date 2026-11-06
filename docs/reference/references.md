@@ -1,6 +1,6 @@
 # References
 
-[← Back to main](index.md)
+[← Back to main](../index.md)
 
 > Check publication versions before citing them in an SSP. CCCS and TBS update their guidance from
 > time to time.
@@ -42,6 +42,9 @@
   <https://docs.redhat.com/en/documentation/openshift_container_platform/4.22>
 - OpenShift Container Platform 4.22 release notes —
   <https://docs.redhat.com/en/documentation/openshift_container_platform/4.22/html/release_notes/ocp-4-22-release-notes>
+- Disconnected environments (mirroring with `oc-mirror` v2, mirror registry for Red Hat OpenShift,
+  OpenShift Update Service in disconnected clusters), in the 4.22 documentation set
+- Installing on bare metal: installer-provisioned infrastructure, in the 4.22 documentation set
 - Security and compliance (Compliance Operator, File Integrity Operator, Security Profiles Operator,
   cert-manager, External Secrets Operator), in the 4.22 documentation set
 - Red Hat OpenShift Container Platform Life Cycle Policy —

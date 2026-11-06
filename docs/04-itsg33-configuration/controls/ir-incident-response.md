@@ -1,6 +1,6 @@
 # IR — Incident Response
 
-[← Back to control families](index.md) · [← Back to main](../index.md)
+[← Back to control families](index.md) · [← Back to main](../../index.md)
 
 Incident response is mostly an organizational process. OpenShift provides the **detection,
 containment, and forensic** capabilities that the process depends on.

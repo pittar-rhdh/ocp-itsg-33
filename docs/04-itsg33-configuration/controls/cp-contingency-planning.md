@@ -1,6 +1,6 @@
 # CP — Contingency Planning
 
-[← Back to control families](index.md) · [← Back to main](../index.md)
+[← Back to control families](index.md) · [← Back to main](../../index.md)
 
 For a medium-availability system, the platform needs **resilience inside a site** (highly available
 control plane, ingress, and workloads) and **recovery across sites** (backups, a rebuild from

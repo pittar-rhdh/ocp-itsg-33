@@ -1,6 +1,6 @@
-# 04 — Compliance Automation and Evidence
+# Compliance Automation and Evidence
 
-[← Back to main](index.md)
+[← Back to main](../index.md)
 
 ITSG-33 assessments need **evidence** that controls are implemented and working as intended.
 OpenShift can produce much of this evidence automatically and continuously. This section
@@ -14,7 +14,7 @@ describes the tools, how they map to ITSG-33, and how to package evidence.
 | **Automated compliance scans** | Compliance Operator (`ComplianceCheckResult`, ARF/XCCDF reports) | CA-2, CA-7, CM-6, SI-6 |
 | **Policy compliance status** | ACM governance policies, RHACS compliance | CA-7, CM-3, CM-6 |
 | **Logs and audit records** | API audit logs, node audit logs, SIEM queries | AU-2, AU-3, AU-6, AU-12 |
-| **Vulnerability reports** | RHACS, Quay/Clair, Insights Advisor | RA-5, SI-2 |
+| **Vulnerability reports** | RHACS (offline vulnerability definitions) | RA-5, SI-2 |
 | **Integrity reports** | File Integrity Operator `FileIntegrityNodeStatus` | SI-7 |
 | **Change records** | Git pull requests, Argo CD sync history, `ClusterVersion` history | CM-3, CM-4, CM-5 |
 | **Procedures and plans** | SSP, IR plan, CP plan, operations runbooks | IR-8, CP-2, PL-2 |
@@ -232,8 +232,8 @@ spec:
                   name: itsg33-classification-banner
 ```
 
-ACM can also **check that the Compliance Operator is installed and that scans pass** across all
-managed clusters, by using a `ConfigurationPolicy` that looks at `ComplianceCheckResult` objects.
+ACM can also **check that the Compliance Operator is installed and that scans pass** on the
+cluster (`local-cluster`, and any clusters added later), by using a `ConfigurationPolicy` that looks at `ComplianceCheckResult` objects.
 This gives you a single view for CA-7.
 
 > **Tip:** Generate policies with the **PolicyGenerator** Kustomize plugin from plain manifests kept

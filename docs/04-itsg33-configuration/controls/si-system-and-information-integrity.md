@@ -1,6 +1,6 @@
 # SI — System and Information Integrity
 
-[← Back to control families](index.md) · [← Back to main](../index.md)
+[← Back to control families](index.md) · [← Back to main](../../index.md)
 
 ---
 
@@ -157,7 +157,7 @@ ACM policies check for drift continuously. Failures produce alerts and POA&M ent
 - RHCOS content is checked against the signed release payload. MCO checks for drift between the
   rendered `MachineConfig` and the actual on-disk state, and marks the node degraded if they
   differ.
-- Turn on **UEFI Secure Boot** on bare-metal and vSphere nodes where supported.
+- Turn on **UEFI Secure Boot** on all bare-metal nodes where supported.
 - **SI-7(1) Integrity checks:** run them on a schedule (FIO `gracePeriod`).
 - **Container image integrity:** use signature verification (see SA-12) and pull images by digest.
 

@@ -1,0 +1,34 @@
+# Advanced Cluster Security operator (Central and SecuredCluster)
+# Channel: confirm against the mirrored catalog with
+#   01-mirror/03-list-operator-channels.sh rhacs-operator
+# The catalog source name is set for every Subscription by the cluster overlay.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rhacs-operator
+  annotations:
+    itsg33/controls: "RA-5,SI-3,SI-4,CM-7"
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: rhacs-operator
+  namespace: rhacs-operator
+  annotations:
+    itsg33/controls: "RA-5,SI-3,SI-4,CM-7"
+spec:
+  upgradeStrategy: Default                # AllNamespaces install mode
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: rhacs-operator
+  namespace: rhacs-operator
+  annotations:
+    itsg33/controls: "RA-5,SI-3,SI-4,CM-7"
+spec:
+  name: rhacs-operator
+  channel: stable
+  installPlanApproval: Manual             # CM-3: every install and update is approved
+  source: redhat-operators                # replaced by the overlay (oc-mirror catalog source)
+  sourceNamespace: openshift-marketplace

@@ -1,0 +1,49 @@
+# OPTIONAL (not enabled in the example overlay): certificates from the
+# departmental PKI through ACME with DNS-01 (IA-5(2), SC-12, SC-17).
+# Enable it once the departmental ACME service and the TSIG key exist.
+#
+# The CertManager "cluster" resource is created by the operator; this example
+# only adds the issuer and the API server certificate. Point the APIServer
+# servingCerts.namedCertificates at the "api-server-cert" Secret after the
+# certificate is issued.
+#
+# Created outside Git: Secret cert-manager/tsig-secret (key: tsig-secret-key)
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: gc-dept-pki
+  annotations:
+    itsg33/controls: "SC-12,SC-17,IA-5(2)"
+spec:
+  acme:
+    server: https://acme.pki.example.gc.ca/directory
+    privateKeySecretRef:
+      name: gc-dept-pki-account-key
+    solvers:
+      - dns01:
+          rfc2136:
+            nameserver: 10.0.0.53:53
+            tsigKeyName: ocp-acme
+            tsigAlgorithm: HMACSHA256
+            tsigSecretSecretRef:
+              name: tsig-secret
+              key: tsig-secret-key
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: api-server-cert
+  namespace: openshift-config
+  annotations:
+    itsg33/controls: "SC-12,SC-17,SC-23"
+spec:
+  secretName: api-server-cert
+  dnsNames: [api.ocp1.example.gc.ca]
+  duration: 2160h       # 90 days
+  renewBefore: 360h     # 15 days
+  privateKey:
+    algorithm: ECDSA
+    size: 384
+  issuerRef:
+    kind: ClusterIssuer
+    name: gc-dept-pki

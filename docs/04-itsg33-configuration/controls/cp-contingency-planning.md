@@ -59,50 +59,13 @@ oc debug node/<control-plane-node> -- chroot /host \
 # Copy the snapshot and static pod resources to off-cluster encrypted storage
 ```
 
-**Configuration example — OADP schedule:**
+**Configuration — OADP backup location and schedule:** in Git. File:
+`04-gitops/components/oadp/oadp.yaml`.
 
-```yaml
-apiVersion: oadp.openshift.io/v1alpha1
-kind: DataProtectionApplication
-metadata:
-  name: itsg33-dpa
-  namespace: openshift-adp
-spec:
-  configuration:
-    velero:
-      defaultPlugins: [openshift, aws, csi]
-    nodeAgent:
-      enable: true
-      uploaderType: kopia
-  backupLocations:
-    - velero:
-        provider: aws                    # S3-compatible object storage at the alternate site
-        default: true
-        credential:
-          name: cloud-credentials
-          key: cloud
-        objectStorage:
-          bucket: ocp-prod-backups
-          prefix: velero
-        config:
-          region: ca-central-1
-          s3Url: https://s3.alt-site.example.gc.ca
-          s3ForcePathStyle: "true"
----
-apiVersion: velero.io/v1
-kind: Schedule
-metadata:
-  name: tenant-daily
-  namespace: openshift-adp
-spec:
-  schedule: "0 2 * * *"
-  template:
-    labelSelector:
-      matchLabels:
-        itsg33/backup: "daily"
-    snapshotMoveData: true                # Copy snapshot data off-cluster
-    ttl: 720h0m0s                         # 30 days; align with the departmental retention policy
-```
+A `DataProtectionApplication` for the departmental S3 endpoint (Secret `cloud-credentials` created
+outside Git) and a nightly `Schedule` for namespaces labelled `itsg33/backup=daily`, kept 30 days.
+
+See [how the configuration is applied](../platform-configuration.md).
 
 **Evidence:**
 

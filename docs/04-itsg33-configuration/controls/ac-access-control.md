@@ -43,50 +43,27 @@ remove accounts.
 - **AC-2(4) Automated audit actions:** creating, changing, or deleting `User`, `Group`, `Identity`,
   `RoleBinding`, and `ClusterRoleBinding` objects is recorded in the API audit log (see AU-2).
 
-**Configuration example — remove kubeadmin and disable self-provisioning:**
+**Configuration — remove kubeadmin and disable self-provisioning:** one-time script
+`04-gitops/05-lock-down-access.sh`. It first checks that you are logged in through the IdP and are
+a platform admin through the `ocp-platform-admins` group, then runs:
 
 ```bash
-# After verifying that an IdP-backed cluster-admin group works:
-oc delete secret kubeadmin -n kube-system
-
-# Stop all authenticated users from creating projects
-oc patch clusterrolebinding.rbac self-provisioners \
-  -p '{"subjects": null}'
+oc patch clusterrolebinding.rbac self-provisioners -p '{"subjects": null}'
 oc annotate clusterrolebinding.rbac self-provisioners \
   'rbac.authorization.kubernetes.io/autoupdate=false' --overwrite
+oc delete secret kubeadmin -n kube-system
 ```
 
-**Configuration example — bind cluster roles to IdP groups (GitOps-managed):**
+The ACM policies `itsg33-ia-2-kubeadmin-removed` and `itsg33-ac-6-no-self-provisioning` keep
+reporting on both afterwards ([ACM governance](../acm-governance.md)).
 
-```yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: itsg33-platform-admins
-  annotations:
-    itsg33/controls: "AC-2,AC-5,AC-6"
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-  - apiGroup: rbac.authorization.k8s.io
-    kind: Group
-    name: ocp-platform-admins          # Group name from the IdP groups claim
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: itsg33-security-auditors
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-reader                 # Read-only access for assessors and the security team
-subjects:
-  - apiGroup: rbac.authorization.k8s.io
-    kind: Group
-    name: ocp-security-auditors
-```
+**Configuration — bind cluster roles to IdP groups:** in Git. File:
+`04-gitops/components/rbac/cluster-role-bindings.yaml`.
+
+`ocp-platform-admins` gets `cluster-admin` and `ocp-security-auditors` gets `cluster-reader`, both
+bound to IdP groups.
+
+See [how the configuration is applied](../platform-configuration.md).
 
 **Evidence:**
 
@@ -130,47 +107,18 @@ system resources.
 - Use `ValidatingAdmissionPolicy` (built into Kubernetes) for organization-specific rules (for
   example, requiring a data classification label on namespaces).
 
-**Configuration example — require a classification label on namespaces:**
+**Configuration — require a classification label on tenant namespaces:** in Git. File:
+`04-gitops/components/namespace-admission/validating-admission-policies.yaml`.
 
-```yaml
-apiVersion: admissionregistration.k8s.io/v1
-kind: ValidatingAdmissionPolicy
-metadata:
-  name: itsg33-require-classification-label
-spec:
-  failurePolicy: Fail
-  matchConstraints:
-    resourceRules:
-      - apiGroups: [""]
-        apiVersions: ["v1"]
-        operations: ["CREATE", "UPDATE"]
-        resources: ["namespaces"]
-  validations:
-    - expression: >-
-        has(object.metadata.labels) &&
-        'data-classification' in object.metadata.labels &&
-        object.metadata.labels['data-classification'] in ['unclassified','protected-a','protected-b']
-      message: "Namespaces must carry a data-classification label (unclassified, protected-a, protected-b)."
----
-apiVersion: admissionregistration.k8s.io/v1
-kind: ValidatingAdmissionPolicyBinding
-metadata:
-  name: itsg33-require-classification-label
-spec:
-  policyName: itsg33-require-classification-label
-  validationActions: ["Deny", "Audit"]
-  matchResources:
-    namespaceSelector:
-      matchExpressions:
-        - key: kubernetes.io/metadata.name
-          operator: NotIn
-          values: ["default", "kube-system", "kube-public", "kube-node-lease"]
-        - key: openshift.io/run-level
-          operator: DoesNotExist
-```
+A `ValidatingAdmissionPolicy` denies tenant namespaces (label `itsg33/tenant=true`) without a
+`data-classification` label of `unclassified`, `protected-a` or `protected-b`. The project template
+sets `protected-b` by default.
 
-> Test this in audit-only mode (`validationActions: ["Audit"]`) first. Platform namespaces
-> (`openshift-*`) are created by operators and need to be excluded or pre-labelled.
+See [how the configuration is applied](../platform-configuration.md).
+
+> The binding selects only tenant namespaces, so operator-created platform namespaces are not
+> affected. To enforce the label on every namespace instead, test in audit-only mode
+> (`validationActions: ["Audit"]`) first and pre-label the platform namespaces.
 
 **Evidence:**
 
@@ -212,60 +160,14 @@ information within the system and between interconnected systems.
   [below](#network-level-segmentation-with-clusteruserdefinednetwork)). With this, a wrong tenant
   `NetworkPolicy` can't open a path between zones.
 
-**Configuration example — baseline default-deny with platform guardrails:**
+**Configuration — baseline default-deny with platform guardrails:** in Git. File:
+`04-gitops/components/tenant-network-policy/admin-network-policies.yaml`.
 
-```yaml
-# Tenants may allow traffic with NetworkPolicy; otherwise everything between namespaces is denied.
-apiVersion: policy.networking.k8s.io/v1alpha1
-kind: BaselineAdminNetworkPolicy
-metadata:
-  name: default                         # Only one BANP named "default" is allowed
-spec:
-  subject:
-    namespaces:
-      matchLabels:
-        itsg33/tenant: "true"
-  ingress:
-    - name: default-deny-ingress
-      action: Deny
-      from:
-        - namespaces: {}
-  egress:
-    - name: default-deny-egress-to-cluster
-      action: Deny
-      to:
-        - namespaces: {}
----
-# Guardrail tenants cannot override: allow DNS, deny access to platform namespaces.
-apiVersion: policy.networking.k8s.io/v1alpha1
-kind: AdminNetworkPolicy
-metadata:
-  name: itsg33-tenant-guardrails
-spec:
-  priority: 10
-  subject:
-    namespaces:
-      matchLabels:
-        itsg33/tenant: "true"
-  egress:
-    - name: allow-dns
-      action: Allow
-      to:
-        - namespaces:
-            matchLabels:
-              kubernetes.io/metadata.name: openshift-dns
-      ports:
-        - portNumber: { protocol: UDP, port: 5353 }
-        - portNumber: { protocol: TCP, port: 5353 }
-    - name: deny-platform-namespaces
-      action: Deny
-      to:
-        - namespaces:
-            matchExpressions:
-              - key: kubernetes.io/metadata.name
-                operator: In
-                values: ["openshift-etcd", "openshift-kube-apiserver", "openshift-monitoring", "openshift-logging"]
-```
+A `BaselineAdminNetworkPolicy` denies traffic between tenant namespaces unless the tenant allows
+it, and an `AdminNetworkPolicy` (priority 10) allows DNS and denies tenant access to
+`openshift-etcd`, `openshift-kube-apiserver`, `openshift-monitoring` and `openshift-logging`.
+
+See [how the configuration is applied](../platform-configuration.md).
 
 > **API version note:** In OpenShift, the ANP/BANP APIs use `policy.networking.k8s.io/v1alpha1`.
 > Upstream is moving to a unified `ClusterNetworkPolicy` API. Check
@@ -347,39 +249,12 @@ A namespace labelled for a zone but missing the primary network label would quie
 default network, outside the zone. This admission policy blocks that, and stops platform
 namespaces from being put into a zone.
 
-```yaml
-apiVersion: admissionregistration.k8s.io/v1
-kind: ValidatingAdmissionPolicy
-metadata:
-  name: itsg33-zone-network-consistency
-spec:
-  failurePolicy: Fail
-  matchConstraints:
-    resourceRules:
-      - apiGroups: [""]
-        apiVersions: ["v1"]
-        operations: ["CREATE", "UPDATE"]
-        resources: ["namespaces"]
-  validations:
-    - expression: >-
-        !(has(object.metadata.labels) && 'itsg33/zone' in object.metadata.labels &&
-          object.metadata.labels['itsg33/zone'] in ['oz','rz']) ||
-        'k8s.ovn.org/primary-user-defined-network' in object.metadata.labels
-      message: "Namespaces in a CUDN zone (oz, rz) must be created with the k8s.ovn.org/primary-user-defined-network label."
-    - expression: >-
-        !(has(object.metadata.labels) && 'itsg33/zone' in object.metadata.labels) ||
-        !(object.metadata.name == 'default' || object.metadata.name.startsWith('openshift-') ||
-          object.metadata.name.startsWith('kube-'))
-      message: "Platform namespaces must not be assigned to a CUDN zone."
----
-apiVersion: admissionregistration.k8s.io/v1
-kind: ValidatingAdmissionPolicyBinding
-metadata:
-  name: itsg33-zone-network-consistency
-spec:
-  policyName: itsg33-zone-network-consistency
-  validationActions: ["Deny", "Audit"]
-```
+**Configuration — zone and network label consistency:** in Git. File:
+`04-gitops/components/namespace-admission/validating-admission-policies.yaml`.
+
+The `itsg33-zone-network-consistency` policy in the same file as the classification-label policy.
+
+See [how the configuration is applied](../platform-configuration.md).
 
 > Only platform administrators should be able to create `ClusterUserDefinedNetwork` objects or set
 > zone labels on namespaces. Tenants can create namespace-scoped `UserDefinedNetwork` objects if RBAC
@@ -556,45 +431,23 @@ events.
 
 **Control intent (summary):** Show an approved system use notification before granting access.
 
-**Configuration example — login page and console banner:**
+**Login page template** (kept outside Git as a reviewed file, `LOGIN_TEMPLATE_FILE`):
 
 ```bash
-# Generate the default template, add the GC system use notification, and store it
+# Generate the default template, then add the approved GC system use notification
 oc adm create-login-template > login.html
-# Edit login.html to add the approved notice text, then:
-oc create secret generic itsg33-login-template --from-file=login.html -n openshift-config
+# 04-gitops/03-create-secrets.sh creates openshift-config/itsg33-login-template from it
 ```
 
-```yaml
-apiVersion: config.openshift.io/v1
-kind: OAuth
-metadata:
-  name: cluster
-spec:
-  templates:
-    login:
-      name: itsg33-login-template
----
-apiVersion: console.openshift.io/v1
-kind: ConsoleNotification
-metadata:
-  name: itsg33-classification-banner
-spec:
-  text: "PROTECTED B — Authorized use only. Activity is monitored and logged."
-  location: BannerTopBottom
-  color: "#FFFFFF"
-  backgroundColor: "#00529B"
----
-# CLI users: message shown by `oc login`
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: motd
-  namespace: openshift
-data:
-  message: |
-    PROTECTED B — Authorized use only. Use of this system constitutes consent to monitoring.
-```
+**Configuration — console banner, `oc login` message, and login page:** in Git. Files:
+`04-gitops/components/system-use-notification/banners.yaml`,
+`04-gitops/components/identity/oauth.yaml`.
+
+The `ConsoleNotification` and the `motd` ConfigMap are in Git. The OAuth resource refers to the
+`itsg33-login-template` Secret, which `04-gitops/03-create-secrets.sh` creates from the reviewed
+HTML file (`LOGIN_TEMPLATE_FILE`), because a broken template stops every login.
+
+See [how the configuration is applied](../platform-configuration.md).
 
 > If you use direct external OIDC authentication instead of the built-in OAuth server, the login
 > page belongs to the IdP. Put the notice there.
@@ -620,16 +473,12 @@ data:
 departmental values (for example, 15 minutes of inactivity and an 8-hour maximum). The OS
 session lock on the workstation is an endpoint control (Org).
 
-```yaml
-apiVersion: config.openshift.io/v1
-kind: OAuth
-metadata:
-  name: cluster
-spec:
-  tokenConfig:
-    accessTokenInactivityTimeout: 15m0s
-    accessTokenMaxAgeSeconds: 28800      # 8 hours
-```
+**Configuration — session limits:** in Git. File: `04-gitops/components/identity/oauth.yaml`.
+
+`spec.tokenConfig` sets `accessTokenInactivityTimeout: 15m0s` and `accessTokenMaxAgeSeconds: 28800`
+(8 hours).
+
+See [how the configuration is applied](../platform-configuration.md).
 
 **Evidence:** `oc get oauth cluster -o jsonpath='{.spec.tokenConfig}'`; Compliance Operator results.
 

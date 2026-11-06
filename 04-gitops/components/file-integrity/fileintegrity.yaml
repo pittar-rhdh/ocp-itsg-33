@@ -1,0 +1,36 @@
+# AIDE-based file integrity monitoring on every node (SI-7, AU-6).
+# Failed checks raise alerts; investigate them through the incident process (IR-4).
+apiVersion: fileintegrity.openshift.io/v1alpha1
+kind: FileIntegrity
+metadata:
+  name: worker-fileintegrity
+  namespace: openshift-file-integrity
+  annotations:
+    itsg33/controls: "SI-7,SI-7(1),AU-6"
+spec:
+  nodeSelector:
+    node-role.kubernetes.io/worker: ""
+  tolerations:
+    - key: node-role.kubernetes.io/infra
+      operator: Exists
+      effect: NoSchedule
+  config:
+    gracePeriod: 900                    # seconds between scans
+    maxBackups: 5
+---
+apiVersion: fileintegrity.openshift.io/v1alpha1
+kind: FileIntegrity
+metadata:
+  name: master-fileintegrity
+  namespace: openshift-file-integrity
+  annotations:
+    itsg33/controls: "SI-7,SI-7(1),AU-6"
+spec:
+  nodeSelector:
+    node-role.kubernetes.io/master: ""
+  tolerations:
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+  config:
+    gracePeriod: 900

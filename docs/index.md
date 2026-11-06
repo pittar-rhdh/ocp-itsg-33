@@ -54,7 +54,7 @@ The reasons for each choice, and the alternatives, are in
 | **1 — Content mirroring** | Low side | Written (examples, not validated) | [Phase 1](01-mirroring/index.md) |
 | **2 — High-side setup** | High side | Written (examples, not validated) | [Phase 2](02-high-side/index.md) |
 | **3 — Bare-metal IPI install** | High side | Written (examples, not validated) | [Phase 3](03-cluster-install/index.md) |
-| **4 — ITSG-33 configuration as code** | High side | Control guidance available; GitOps planned | [Phase 4](04-itsg33-configuration/index.md) |
+| **4 — ITSG-33 configuration as code** | High side | Written (examples, not validated) | [Phase 4](04-itsg33-configuration/index.md) |
 | **5 — Compliance reporting and evidence** | High side | Guidance available; automation planned | [Phase 5](05-compliance-evidence/index.md) |
 | **6 — Standard operating procedures** | Both | Planned | [Phase 6](06-sops/index.md) |
 
@@ -96,7 +96,8 @@ lib/common.sh                 Helpers shared by the scripts of every phase
 01-mirror/                    Phase 1 scripts, generated imageset-config.yaml, transfer record template
 02-high-side/                 Phase 2 scripts (accept, registry install/hardening/access, import, installer)
 03-install/                   Phase 3 templates, host inventory examples, install-time manifests, scripts
-04-gitops/ .. 05-evidence/    Configuration and scripts for later phases (added as they are built)
+04-gitops/                    Phase 4 GitOps bootstrap, components, cluster overlays, ACM policies, scripts
+05-evidence/                  Phase 5 configuration and scripts (added as it is built)
 ```
 
 See [Versions and pinned content](reference/versions.md) for how `versions.env` is used.

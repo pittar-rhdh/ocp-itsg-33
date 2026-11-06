@@ -1,0 +1,22 @@
+# The default Argo CD instance can manage only a small set of cluster-scoped
+# resources. Platform configuration (OAuth, APIServer, operators, admission
+# policies) needs cluster-admin. This binding is the one place where that
+# privilege is granted, so it is reviewed with every change to this file.
+#
+# Compensating controls (AC-6): only this repository is a permitted source
+# (AppProject itsg33-platform), merges need review (CM-3, CM-5), and only
+# ocp-platform-admins can sync or change Argo CD (argocd.yaml).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: itsg33-gitops-cluster-admin
+  annotations:
+    itsg33/controls: "AC-6,CM-5"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: openshift-gitops-argocd-application-controller
+    namespace: openshift-gitops

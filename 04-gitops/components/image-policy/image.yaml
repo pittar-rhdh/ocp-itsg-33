@@ -1,0 +1,22 @@
+# Only approved registries can be used for pods (CM-7, CM-11, SA-12).
+#
+# Red Hat: when allowedRegistries is set, every other registry is blocked,
+# including registry.redhat.io, quay.io and the internal registry, which the
+# release payload references. They must stay in the list even on a
+# disconnected cluster (the pulls are redirected to the mirror by the
+# ImageDigestMirrorSets), and the mirror registry must be added as well.
+# The MCO rolls the change out to every node (CRI-O restart, no reboot).
+apiVersion: config.openshift.io/v1
+kind: Image
+metadata:
+  name: cluster
+  annotations:
+    itsg33/controls: "CM-7,CM-11,SA-12"
+spec:
+  registrySources:
+    allowedRegistries:
+      - registry.example.gc.ca:8443                     # mirror registry (Phase 2)
+      - apps-registry.example.gc.ca                     # departmental application registry (AD-20)
+      - quay.io                                         # payload references (served from the mirror)
+      - registry.redhat.io                              # operator references (served from the mirror)
+      - image-registry.openshift-image-registry.svc:5000

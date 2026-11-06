@@ -338,58 +338,16 @@ Also collect:
   `haproxy.router.openshift.io/hsts_header` annotation, or enforce it with the
   `requiredHSTSPolicies` setting on the `ingresses.config.openshift.io` resource.
 
-**Configuration example — TLS profiles aligned to ITSP.40.062:**
+**Configuration — TLS profiles aligned to ITSP.40.062:** in Git. Files:
+`04-gitops/components/api-server/apiserver.yaml`,
+`04-gitops/components/ingress-tls/ingresscontroller.yaml`,
+`04-gitops/components/kubelet-tls/kubeletconfig.yaml`.
 
-```yaml
-# API server (also inherited by many platform components)
-apiVersion: config.openshift.io/v1
-kind: APIServer
-metadata:
-  name: cluster
-spec:
-  tlsSecurityProfile:
-    type: Custom
-    custom:
-      minTLSVersion: VersionTLS12
-      ciphers:
-        - TLS_AES_128_GCM_SHA256
-        - TLS_AES_256_GCM_SHA384
-        - ECDHE-ECDSA-AES128-GCM-SHA256
-        - ECDHE-RSA-AES128-GCM-SHA256
-        - ECDHE-ECDSA-AES256-GCM-SHA384
-        - ECDHE-RSA-AES256-GCM-SHA384
----
-# Ingress (set on each IngressController)
-apiVersion: operator.openshift.io/v1
-kind: IngressController
-metadata:
-  name: default
-  namespace: openshift-ingress-operator
-spec:
-  tlsSecurityProfile:
-    type: Custom
-    custom:
-      minTLSVersion: VersionTLS12
-      ciphers:
-        - TLS_AES_128_GCM_SHA256
-        - TLS_AES_256_GCM_SHA384
-        - ECDHE-ECDSA-AES128-GCM-SHA256
-        - ECDHE-RSA-AES128-GCM-SHA256
-        - ECDHE-ECDSA-AES256-GCM-SHA384
-        - ECDHE-RSA-AES256-GCM-SHA384
----
-# Kubelet
-apiVersion: machineconfiguration.openshift.io/v1
-kind: KubeletConfig
-metadata:
-  name: itsg33-kubelet-tls
-spec:
-  machineConfigPoolSelector:
-    matchLabels:
-      pools.operator.machineconfiguration.openshift.io/worker: ""
-  tlsSecurityProfile:
-    type: Intermediate
-```
+A `Custom` profile with TLS 1.2 minimum and AES-GCM suites only on the API server, the default
+IngressController and the kubelets (control plane and worker pools). A `KubeletConfig` change
+reboots nodes pool by pool.
+
+See [how the configuration is applied](../platform-configuration.md).
 
 > Check the cipher list against the current ITSP.40.062 and ITSP.40.111 revisions. TLS 1.3 cipher
 > suites can't be configured in Go-based components. They're always on when TLS 1.3 is negotiated,
@@ -592,17 +550,12 @@ oc debug node/<node> -- chroot /host update-crypto-policies --show         # Exp
   at rest, or CSI driver volume encryption with keys held in the departmental KMS.
 - **Backups** are encrypted at rest in object storage (see CP-9).
 
-**Configuration example — etcd encryption:**
+**Configuration — etcd encryption:** in Git. File:
+`04-gitops/components/api-server/apiserver.yaml`.
 
-```yaml
-apiVersion: config.openshift.io/v1
-kind: APIServer
-metadata:
-  name: cluster
-spec:
-  encryption:
-    type: aesgcm
-```
+`spec.encryption.type: aesgcm`. Phase 3 sets it on Day 1 and Git owns it from Phase 4.
+
+See [how the configuration is applied](../platform-configuration.md).
 
 **Configuration example — RHCOS disk encryption with TPM 2.0 (Butane, applied at installation):**
 

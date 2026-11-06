@@ -1,0 +1,42 @@
+# Kubelet TLS profile on every node. A KubeletConfig change rolls out through
+# the Machine Config Operator and drains and reboots nodes one pool at a time:
+# merge it in a maintenance window (CM-3).
+apiVersion: machineconfiguration.openshift.io/v1
+kind: KubeletConfig
+metadata:
+  name: itsg33-kubelet-tls-worker
+  annotations:
+    itsg33/controls: "SC-8,SC-13"
+spec:
+  machineConfigPoolSelector:
+    matchLabels:
+      pools.operator.machineconfiguration.openshift.io/worker: ""
+  tlsSecurityProfile:
+    type: Custom
+    custom:
+      minTLSVersion: VersionTLS12
+      ciphers:
+        - ECDHE-ECDSA-AES128-GCM-SHA256
+        - ECDHE-RSA-AES128-GCM-SHA256
+        - ECDHE-ECDSA-AES256-GCM-SHA384
+        - ECDHE-RSA-AES256-GCM-SHA384
+---
+apiVersion: machineconfiguration.openshift.io/v1
+kind: KubeletConfig
+metadata:
+  name: itsg33-kubelet-tls-master
+  annotations:
+    itsg33/controls: "SC-8,SC-13"
+spec:
+  machineConfigPoolSelector:
+    matchLabels:
+      pools.operator.machineconfiguration.openshift.io/master: ""
+  tlsSecurityProfile:
+    type: Custom
+    custom:
+      minTLSVersion: VersionTLS12
+      ciphers:
+        - ECDHE-ECDSA-AES128-GCM-SHA256
+        - ECDHE-RSA-AES128-GCM-SHA256
+        - ECDHE-ECDSA-AES256-GCM-SHA384
+        - ECDHE-RSA-AES256-GCM-SHA384

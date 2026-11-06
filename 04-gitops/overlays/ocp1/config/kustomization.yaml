@@ -1,0 +1,62 @@
+# Platform configuration for cluster ocp1: one component per capability.
+# Values that differ per cluster are patched below; everything else is the
+# shared baseline in 04-gitops/components.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  # Identity and access (AC, IA)
+  - ../../../components/identity
+  - ../../../components/rbac
+  - ../../../components/system-use-notification
+  - ../../../components/namespace-admission
+  - ../../../components/project-template
+  - ../../../components/tenant-network-policy
+  # Platform hardening (AU, CM, SC)
+  - ../../../components/api-server
+  - ../../../components/ingress-tls
+  - ../../../components/kubelet-tls                 # node reboots: merge in a maintenance window
+  - ../../../components/operator-hub
+  - ../../../components/image-policy
+  # Security services (AU, CA, RA, SI, CP)
+  - ../../../components/logging
+  - ../../../components/compliance-scans
+  - ../../../components/file-integrity
+  - ../../../components/rhacs
+  - ../../../components/acm-hub
+  - ../../../components/oadp
+  # Optional, enable when the departmental service exists:
+  # - ../../../components/cert-manager-pki
+patches:
+  # Storage class of the vendor CSI driver (AD-13).
+  - target: {kind: LokiStack, name: logging-loki}
+    patch: |-
+      - op: replace
+        path: /spec/storageClassName
+        value: csi-block
+  - target: {kind: ScanSetting, name: itsg33-pbmm}
+    patch: |-
+      - op: replace
+        path: /rawResultStorage/storageClassName
+        value: csi-block
+  - target: {kind: Central, name: stackrox-central-services}
+    patch: |-
+      - op: replace
+        path: /spec/central/db/persistence/persistentVolumeClaim/storageClassName
+        value: csi-block
+  # Cluster identity.
+  - target: {kind: SecuredCluster, name: stackrox-secured-cluster-services}
+    patch: |-
+      - op: replace
+        path: /spec/clusterName
+        value: ocp1
+  - target: {kind: DataProtectionApplication, name: itsg33-dpa}
+    patch: |-
+      - op: replace
+        path: /spec/backupLocations/0/velero/objectStorage/bucket
+        value: ocp1-backups
+  # Same catalog source as operators/kustomization.yaml.
+  - target: {kind: MultiClusterHub, name: multiclusterhub}
+    patch: |-
+      - op: replace
+        path: /metadata/annotations/installer.open-cluster-management.io~1mce-subscription-spec
+        value: '{"source": "cs-redhat-operator-index-v4-22"}'

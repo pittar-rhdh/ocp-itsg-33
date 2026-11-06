@@ -51,132 +51,14 @@ cluster-config/
     nonprod/
 ```
 
-**Configuration example — project request template with secure defaults:**
+**Configuration — project request template with secure defaults:** in Git. File:
+`04-gitops/components/project-template/project-template.yaml`.
 
-```yaml
-apiVersion: template.openshift.io/v1
-kind: Template
-metadata:
-  name: itsg33-project-request
-  namespace: openshift-config
-objects:
-  - apiVersion: project.openshift.io/v1
-    kind: Project
-    metadata:
-      name: ${PROJECT_NAME}
-      annotations:
-        openshift.io/description: ${PROJECT_DESCRIPTION}
-        openshift.io/display-name: ${PROJECT_DISPLAYNAME}
-        openshift.io/requester: ${PROJECT_REQUESTING_USER}
-      labels:
-        itsg33/tenant: "true"
-        pod-security.kubernetes.io/enforce: restricted
-        pod-security.kubernetes.io/audit: restricted
-        pod-security.kubernetes.io/warn: restricted
-  - apiVersion: rbac.authorization.k8s.io/v1
-    kind: RoleBinding
-    metadata:
-      name: admin
-      namespace: ${PROJECT_NAME}
-    roleRef:
-      apiGroup: rbac.authorization.k8s.io
-      kind: ClusterRole
-      name: admin
-    subjects:
-      - apiGroup: rbac.authorization.k8s.io
-        kind: User
-        name: ${PROJECT_ADMIN_USER}
-  - apiVersion: networking.k8s.io/v1
-    kind: NetworkPolicy
-    metadata:
-      name: default-deny-all
-      namespace: ${PROJECT_NAME}
-    spec:
-      podSelector: {}
-      policyTypes: ["Ingress", "Egress"]
-  - apiVersion: networking.k8s.io/v1
-    kind: NetworkPolicy
-    metadata:
-      name: allow-from-openshift-ingress
-      namespace: ${PROJECT_NAME}
-    spec:
-      podSelector: {}
-      ingress:
-        - from:
-            - namespaceSelector:
-                matchLabels:
-                  policy-group.network.openshift.io/ingress: ""
-      policyTypes: ["Ingress"]
-  - apiVersion: networking.k8s.io/v1
-    kind: NetworkPolicy
-    metadata:
-      name: allow-from-openshift-monitoring
-      namespace: ${PROJECT_NAME}
-    spec:
-      podSelector: {}
-      ingress:
-        - from:
-            - namespaceSelector:
-                matchLabels:
-                  network.openshift.io/policy-group: monitoring
-      policyTypes: ["Ingress"]
-  - apiVersion: networking.k8s.io/v1
-    kind: NetworkPolicy
-    metadata:
-      name: allow-dns-egress
-      namespace: ${PROJECT_NAME}
-    spec:
-      podSelector: {}
-      egress:
-        - to:
-            - namespaceSelector:
-                matchLabels:
-                  kubernetes.io/metadata.name: openshift-dns
-          ports:
-            - protocol: UDP
-              port: 5353
-            - protocol: TCP
-              port: 5353
-      policyTypes: ["Egress"]
-  - apiVersion: v1
-    kind: ResourceQuota
-    metadata:
-      name: default-quota
-      namespace: ${PROJECT_NAME}
-    spec:
-      hard:
-        requests.cpu: "8"
-        requests.memory: 16Gi
-        limits.memory: 32Gi
-        pods: "50"
-  - apiVersion: v1
-    kind: LimitRange
-    metadata:
-      name: default-limits
-      namespace: ${PROJECT_NAME}
-    spec:
-      limits:
-        - type: Container
-          default:
-            memory: 512Mi
-          defaultRequest:
-            cpu: 100m
-            memory: 256Mi
-parameters:
-  - name: PROJECT_NAME
-  - name: PROJECT_DISPLAYNAME
-  - name: PROJECT_DESCRIPTION
-  - name: PROJECT_ADMIN_USER
-  - name: PROJECT_REQUESTING_USER
----
-apiVersion: config.openshift.io/v1
-kind: Project
-metadata:
-  name: cluster
-spec:
-  projectRequestTemplate:
-    name: itsg33-project-request
-```
+Every new project gets restricted Pod Security labels, the tenant and `data-classification` labels,
+default-deny network policies (with ingress, monitoring and DNS allowed), a quota and default
+limits. The `Project` resource `cluster` points at the template.
+
+See [how the configuration is applied](../platform-configuration.md).
 
 > If namespaces are created by GitOps rather than through `oc new-project`, the project template is
 > not used. Instead, put the same defaults in a Kustomize component, or enforce them with ACM
@@ -329,16 +211,12 @@ capabilities:
 > The set of capabilities, and which ones are required, changes by release and platform. Check the
 > 4.22 "Cluster capabilities" documentation before installing.
 
-**Configuration example — disable default catalog sources:**
+**Configuration — disable default catalog sources:** in Git. File:
+`04-gitops/components/operator-hub/operatorhub.yaml`.
 
-```yaml
-apiVersion: config.openshift.io/v1
-kind: OperatorHub
-metadata:
-  name: cluster
-spec:
-  disableAllDefaultSources: true
-```
+`disableAllDefaultSources: true`. Phase 3 sets it on Day 1 and Git owns it from Phase 4.
+
+See [how the configuration is applied](../platform-configuration.md).
 
 **Evidence:**
 
@@ -382,23 +260,18 @@ oc get nodes -o custom-columns=NAME:.metadata.name,ROLE:.metadata.labels,OS:.sta
   signature verification (see SI-7 / SA-12).
 - Operator installation is limited to platform administrators and the curated catalog.
 
-```yaml
-apiVersion: config.openshift.io/v1
-kind: Image
-metadata:
-  name: cluster
-spec:
-  registrySources:
-    allowedRegistries:
-      - quay-mirror.example.gc.ca          # Mirror registry (disconnected)
-      - registry.example.gc.ca             # Departmental application registry
-      - image-registry.openshift-image-registry.svc:5000
-      # Connected clusters also need: registry.redhat.io, registry.access.redhat.com, quay.io
-```
+**Configuration — restrict image registries:** in Git. File:
+`04-gitops/components/image-policy/image.yaml`.
 
-> When you set `allowedRegistries`, include every registry the platform itself pulls from (the
-> release and operator images, or their mirrors). Otherwise upgrades and operator installs will
-> fail. The Machine Config Operator rolls this change out to every node.
+Red Hat: when `allowedRegistries` is set, every other registry is blocked, including
+`registry.redhat.io`, `quay.io` and the internal registry, which the release payload and operators
+reference. Keep them in the list even on a disconnected cluster (the image digest mirror sets send
+those pulls to the mirror), and add the mirror registry and the departmental application registry.
+
+See [how the configuration is applied](../platform-configuration.md).
+
+> Otherwise upgrades and operator installs fail. The Machine Config Operator rolls this change
+> out to every node (CRI-O restart, no reboot).
 
 **Evidence:** `oc get image.config.openshift.io cluster -o yaml`; Compliance Operator rules
 `ocp4-allowed-registries` and `ocp4-allowed-registries-for-import`; RHACS policy "Image from

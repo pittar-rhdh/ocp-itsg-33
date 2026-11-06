@@ -101,41 +101,14 @@ minor version are handled through continuous monitoring (CA-7) and change contro
 | Evidence bundle generation | Evidence script / pipeline | Monthly or quarterly |
 | Compliance report to the authorizer | Report from ACM/RHACS/GRC tool | Quarterly |
 
-**Configuration example — ACM policy that flags failing Compliance Operator checks:**
+**Configuration — ACM policy that flags failing Compliance Operator checks:** in Git. File:
+`04-gitops/acm-policies/policies.yaml`.
 
-```yaml
-apiVersion: policy.open-cluster-management.io/v1
-kind: Policy
-metadata:
-  name: itsg33-ca-7-compliance-scan-results
-  namespace: itsg33-policies
-  annotations:
-    policy.open-cluster-management.io/standards: ITSG-33
-    policy.open-cluster-management.io/categories: CA Security Assessment and Authorization
-    policy.open-cluster-management.io/controls: CA-7 Continuous Monitoring
-spec:
-  remediationAction: inform
-  disabled: false
-  policy-templates:
-    - objectDefinition:
-        apiVersion: policy.open-cluster-management.io/v1
-        kind: ConfigurationPolicy
-        metadata:
-          name: itsg33-no-high-severity-failures
-        spec:
-          remediationAction: inform
-          severity: high
-          object-templates:
-            - complianceType: mustnothave
-              objectDefinition:
-                apiVersion: compliance.openshift.io/v1alpha1
-                kind: ComplianceCheckResult
-                metadata:
-                  namespace: openshift-compliance
-                  labels:
-                    compliance.openshift.io/check-status: FAIL
-                    compliance.openshift.io/check-severity: high
-```
+Policy `itsg33-ca-7-no-high-severity-failures` (inform) reports non-compliant while any
+high-severity `ComplianceCheckResult` is `FAIL`. It is one of the ITSG-33 policies placed on
+`local-cluster`.
+
+See [how the configuration is applied](../acm-governance.md).
 
 **Evidence:** ACM governance dashboard export; a continuous monitoring strategy document.
 

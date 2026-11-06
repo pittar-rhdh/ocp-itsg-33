@@ -42,73 +42,24 @@ each node (node scans). It reports results as Kubernetes resources.
 
 ### Install the Compliance Operator
 
-```yaml
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: openshift-compliance
-  labels:
-    openshift.io/cluster-monitoring: "true"
----
-apiVersion: operators.coreos.com/v1
-kind: OperatorGroup
-metadata:
-  name: compliance-operator
-  namespace: openshift-compliance
-spec:
-  targetNamespaces:
-    - openshift-compliance
----
-apiVersion: operators.coreos.com/v1alpha1
-kind: Subscription
-metadata:
-  name: compliance-operator
-  namespace: openshift-compliance
-spec:
-  channel: stable
-  name: compliance-operator
-  source: redhat-operators            # or your mirrored catalog source in disconnected clusters
-  sourceNamespace: openshift-marketplace
-```
+**Configuration — Compliance Operator subscription:** in Git. File:
+`04-gitops/components/operators/compliance-operator/operator.yaml`.
+
+Namespace, OperatorGroup and a Subscription with manual install plan approval, from the mirrored
+catalog.
+
+See [how the configuration is applied](../04-itsg33-configuration/operators.md).
 
 ### Schedule the PBMM baseline scans
 
-```yaml
-apiVersion: compliance.openshift.io/v1alpha1
-kind: ScanSetting
-metadata:
-  name: itsg33-pbmm
-  namespace: openshift-compliance
-schedule: "0 1 * * *"                  # Daily at 01:00 — supports CA-7 continuous monitoring
-roles:
-  - master
-  - worker
-rawResultStorage:
-  rotation: 90                         # Keep 90 sets of raw ARF results (align with AU-11)
-  size: 5Gi
-autoApplyRemediations: false           # Review remediations through change control (CM-3)
-autoUpdateRemediations: false
----
-apiVersion: compliance.openshift.io/v1alpha1
-kind: ScanSettingBinding
-metadata:
-  name: itsg33-pbmm
-  namespace: openshift-compliance
-profiles:
-  - apiGroup: compliance.openshift.io/v1alpha1
-    kind: Profile
-    name: ocp4-moderate
-  - apiGroup: compliance.openshift.io/v1alpha1
-    kind: Profile
-    name: ocp4-moderate-node
-  - apiGroup: compliance.openshift.io/v1alpha1
-    kind: Profile
-    name: rhcos4-moderate
-settingsRef:
-  apiGroup: compliance.openshift.io/v1alpha1
-  kind: ScanSetting
-  name: itsg33-pbmm
-```
+**Configuration — PBMM scan schedule:** in Git. File:
+`04-gitops/components/compliance-scans/compliance.yaml`.
+
+`ScanSetting` `itsg33-pbmm` (daily at 01:00, 90 raw results kept, remediations never applied
+automatically) and the `ScanSettingBinding` for the tailored platform profile, `ocp4-moderate-node`
+and `rhcos4-moderate`.
+
+See [how the configuration is applied](../04-itsg33-configuration/platform-configuration.md).
 
 > If you use custom node pools (for example, `infra`), add them to `roles`. Node scans run once
 > per role.
@@ -122,25 +73,14 @@ Use a `TailoredProfile` to:
   (record the rationale), and
 - give the profile a clear ITSG-33 name for reporting.
 
-```yaml
-apiVersion: compliance.openshift.io/v1alpha1
-kind: TailoredProfile
-metadata:
-  name: ocp4-itsg33-pbmm
-  namespace: openshift-compliance
-spec:
-  extends: ocp4-moderate
-  title: "ITSG-33 PBMM tailored profile for OpenShift platform"
-  description: >-
-    Extends NIST SP 800-53 Moderate content with GC PBMM parameter values.
-  setValues:
-    - name: ocp4-var-oauth-inactivity-timeout
-      rationale: "AC-11 / AC-12: departmental session inactivity limit of 15 minutes"
-      value: "15m0s"
-  disableRules:
-    - name: ocp4-<rule-name>
-      rationale: "Control met by <compensating control>; see SSP section <x>"
-```
+**Configuration — tailored profile:** in Git. File:
+`04-gitops/components/compliance-scans/compliance.yaml`.
+
+`TailoredProfile` `ocp4-itsg33-pbmm` extends `ocp4-moderate` and sets the session inactivity
+timeout to 15 minutes. Add `disableRules` only with a rationale that points to the compensating
+control in the SSP.
+
+See [how the configuration is applied](../04-itsg33-configuration/platform-configuration.md).
 
 > Variable and rule names change between Compliance Operator content releases. List them with
 > `oc get variables.compliance -n openshift-compliance` and
@@ -201,36 +141,13 @@ history centrally. Policies carry `standards`, `categories`, and `controls` anno
 these to label policies with ITSG-33 identifiers** so the governance dashboard reports in ITSG-33
 terms.
 
-```yaml
-apiVersion: policy.open-cluster-management.io/v1
-kind: Policy
-metadata:
-  name: itsg33-ac-8-login-banner
-  namespace: itsg33-policies
-  annotations:
-    policy.open-cluster-management.io/standards: ITSG-33
-    policy.open-cluster-management.io/categories: AC Access Control
-    policy.open-cluster-management.io/controls: AC-8 System Use Notification
-spec:
-  remediationAction: inform            # Switch to enforce once validated
-  disabled: false
-  policy-templates:
-    - objectDefinition:
-        apiVersion: policy.open-cluster-management.io/v1
-        kind: ConfigurationPolicy
-        metadata:
-          name: itsg33-ac-8-console-banner
-        spec:
-          remediationAction: inform
-          severity: medium
-          object-templates:
-            - complianceType: musthave
-              objectDefinition:
-                apiVersion: console.openshift.io/v1
-                kind: ConsoleNotification
-                metadata:
-                  name: itsg33-classification-banner
-```
+**Configuration — ITSG-33 policy annotations:** in Git. File:
+`04-gitops/acm-policies/policies.yaml`.
+
+For example `itsg33-ac-8-login-banner`, with `standards: ITSG-33`, `categories: AC Access Control`
+and `controls: AC-8 System Use Notification`.
+
+See [how the configuration is applied](../04-itsg33-configuration/acm-governance.md).
 
 ACM can also **check that the Compliance Operator is installed and that scans pass** on the
 cluster (`local-cluster`, and any clusters added later), by using a `ConfigurationPolicy` that looks at `ComplianceCheckResult` objects.

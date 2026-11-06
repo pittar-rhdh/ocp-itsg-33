@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../../components/gitops
+  - ../../../components/gitops-rbac
+patches:
+  - target:
+      kind: AppProject
+      name: itsg33-platform
+    patch: |-
+      - op: replace
+        path: /spec/sourceRepos
+        value:
+          - https://git.example.gc.ca/platform/ocp-itsg-33.git

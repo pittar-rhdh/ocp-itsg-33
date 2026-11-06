@@ -26,21 +26,12 @@
 - **Tenants** rebuild images on updated UBI base images. RHACS policies can block deployments with
   fixable critical CVEs.
 
-**Configuration example — controlled operator updates:**
+**Configuration — controlled operator updates:** in Git. File: `04-gitops/components/operators/`.
 
-```yaml
-apiVersion: operators.coreos.com/v1alpha1
-kind: Subscription
-metadata:
-  name: compliance-operator
-  namespace: openshift-compliance
-spec:
-  channel: stable
-  name: compliance-operator
-  source: redhat-operators
-  sourceNamespace: openshift-marketplace
-  installPlanApproval: Manual           # Approve updates through change control
-```
+Every operator Subscription uses `installPlanApproval: Manual`. Install plans are approved under a
+change ticket with `04-gitops/02-approve-installplans.sh`, which records each approval.
+
+See [how the configuration is applied](../operators.md).
 
 **Evidence:**
 
@@ -161,40 +152,12 @@ ACM policies check for drift continuously. Failures produce alerts and POA&M ent
 - **SI-7(1) Integrity checks:** run them on a schedule (FIO `gracePeriod`).
 - **Container image integrity:** use signature verification (see SA-12) and pull images by digest.
 
-**Configuration example — File Integrity Operator:**
+**Configuration — File Integrity Operator:** in Git. File:
+`04-gitops/components/file-integrity/fileintegrity.yaml`.
 
-```yaml
-apiVersion: fileintegrity.openshift.io/v1alpha1
-kind: FileIntegrity
-metadata:
-  name: worker-fileintegrity
-  namespace: openshift-file-integrity
-spec:
-  nodeSelector:
-    node-role.kubernetes.io/worker: ""
-  tolerations:
-    - key: node-role.kubernetes.io/infra
-      operator: Exists
-      effect: NoSchedule
-  config:
-    gracePeriod: 900                    # Seconds between scans
-    maxBackups: 5
----
-apiVersion: fileintegrity.openshift.io/v1alpha1
-kind: FileIntegrity
-metadata:
-  name: master-fileintegrity
-  namespace: openshift-file-integrity
-spec:
-  nodeSelector:
-    node-role.kubernetes.io/master: ""
-  tolerations:
-    - key: node-role.kubernetes.io/master
-      operator: Exists
-      effect: NoSchedule
-  config:
-    gracePeriod: 900
-```
+`FileIntegrity` resources for the worker and control plane nodes, scanning every 15 minutes.
+
+See [how the configuration is applied](../platform-configuration.md).
 
 **Evidence:**
 

@@ -1,0 +1,34 @@
+# External Secrets: secrets from the departmental secret store (needs cert-manager first)
+# Channel: confirm against the mirrored catalog with
+#   01-mirror/03-list-operator-channels.sh openshift-external-secrets-operator
+# The catalog source name is set for every Subscription by the cluster overlay.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: external-secrets-operator
+  annotations:
+    itsg33/controls: "IA-5,SC-12,SC-28"
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: external-secrets-operator
+  namespace: external-secrets-operator
+  annotations:
+    itsg33/controls: "IA-5,SC-12,SC-28"
+spec:
+  upgradeStrategy: Default                # AllNamespaces install mode
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: openshift-external-secrets-operator
+  namespace: external-secrets-operator
+  annotations:
+    itsg33/controls: "IA-5,SC-12,SC-28"
+spec:
+  name: openshift-external-secrets-operator
+  channel: stable-v1
+  installPlanApproval: Manual             # CM-3: every install and update is approved
+  source: redhat-operators                # replaced by the overlay (oc-mirror catalog source)
+  sourceNamespace: openshift-marketplace

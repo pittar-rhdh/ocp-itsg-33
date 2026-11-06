@@ -1,0 +1,36 @@
+# Loki Operator: on-cluster log store (same channel as cluster-logging)
+# Channel: confirm against the mirrored catalog with
+#   01-mirror/03-list-operator-channels.sh loki-operator
+# The catalog source name is set for every Subscription by the cluster overlay.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openshift-operators-redhat
+  annotations:
+    itsg33/controls: "AU-4,AU-6,AU-11"
+  labels:
+    openshift.io/cluster-monitoring: "true"
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: openshift-operators-redhat
+  namespace: openshift-operators-redhat
+  annotations:
+    itsg33/controls: "AU-4,AU-6,AU-11"
+spec:
+  upgradeStrategy: Default                # AllNamespaces install mode
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: loki-operator
+  namespace: openshift-operators-redhat
+  annotations:
+    itsg33/controls: "AU-4,AU-6,AU-11"
+spec:
+  name: loki-operator
+  channel: stable-6.7
+  installPlanApproval: Manual             # CM-3: every install and update is approved
+  source: redhat-operators                # replaced by the overlay (oc-mirror catalog source)
+  sourceNamespace: openshift-marketplace

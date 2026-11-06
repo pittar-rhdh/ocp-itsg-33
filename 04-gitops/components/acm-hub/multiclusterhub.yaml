@@ -1,0 +1,21 @@
+# Advanced Cluster Management hub on this cluster (AD-04). The hub manages
+# itself as "local-cluster", which is where the governance policies in
+# 04-gitops/acm-policies are placed.
+#
+# Disconnected: the annotation tells ACM which catalog source to use when it
+# subscribes to multicluster-engine (the cluster overlay sets the real name).
+#
+# FIPS: older ACM documentation (2.10) says to remove the two CHACHA20 ciphers
+# from spec.ingress.sslCiphers. That field is not in the current upstream
+# MultiClusterHub API, so it is not set here. Check
+# `oc explain multiclusterhub.spec` on the installed version.
+apiVersion: operator.open-cluster-management.io/v1
+kind: MultiClusterHub
+metadata:
+  name: multiclusterhub
+  namespace: open-cluster-management
+  annotations:
+    itsg33/controls: "CA-7,CM-6"
+    installer.open-cluster-management.io/mce-subscription-spec: '{"source": "redhat-operators"}'
+spec:
+  availabilityConfig: High

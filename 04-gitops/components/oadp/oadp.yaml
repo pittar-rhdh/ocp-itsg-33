@@ -1,0 +1,52 @@
+# Backups of tenant namespaces to the departmental S3 endpoint (AD-14, CP-9).
+# etcd backups are a separate procedure (Phase 6), not OADP.
+#
+# Created outside Git by 04-gitops/03-create-secrets.sh:
+#   Secret openshift-adp/cloud-credentials (key: cloud, AWS credentials-file format)
+# If the S3 endpoint uses a departmental CA, add it as
+# backupLocations[].velero.objectStorage.caCert (base64 PEM) in the overlay.
+apiVersion: oadp.openshift.io/v1alpha1
+kind: DataProtectionApplication
+metadata:
+  name: itsg33-dpa
+  namespace: openshift-adp
+  annotations:
+    itsg33/controls: "CP-9,CP-10,SC-28"
+spec:
+  configuration:
+    velero:
+      defaultPlugins: [openshift, aws, csi]
+    nodeAgent:
+      enable: true
+      uploaderType: kopia
+  backupLocations:
+    - velero:
+        provider: aws                    # S3-compatible API
+        default: true
+        credential:
+          name: cloud-credentials
+          key: cloud
+        objectStorage:
+          bucket: ocp1-backups           # replaced by the cluster overlay
+          prefix: velero
+        config:
+          region: ca-central-1           # most S3-compatible stores accept any region value
+          s3Url: https://s3.example.gc.ca
+          s3ForcePathStyle: "true"
+---
+# Namespaces labelled itsg33/backup=daily are backed up every night.
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: tenant-daily
+  namespace: openshift-adp
+  annotations:
+    itsg33/controls: "CP-9,CP-6"
+spec:
+  schedule: "0 2 * * *"
+  template:
+    labelSelector:
+      matchLabels:
+        itsg33/backup: "daily"
+    snapshotMoveData: true                # copy snapshot data off the cluster
+    ttl: 720h0m0s                         # 30 days; align with departmental retention

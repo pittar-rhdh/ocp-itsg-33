@@ -1,0 +1,37 @@
+# File Integrity Operator: AIDE on every node
+# Channel: confirm against the mirrored catalog with
+#   01-mirror/03-list-operator-channels.sh file-integrity-operator
+# The catalog source name is set for every Subscription by the cluster overlay.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openshift-file-integrity
+  annotations:
+    itsg33/controls: "SI-7,AU-6"
+  labels:
+    openshift.io/cluster-monitoring: "true"
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: openshift-file-integrity
+  namespace: openshift-file-integrity
+  annotations:
+    itsg33/controls: "SI-7,AU-6"
+spec:
+  targetNamespaces:
+    - openshift-file-integrity
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: file-integrity-operator
+  namespace: openshift-file-integrity
+  annotations:
+    itsg33/controls: "SI-7,AU-6"
+spec:
+  name: file-integrity-operator
+  channel: stable
+  installPlanApproval: Manual             # CM-3: every install and update is approved
+  source: redhat-operators                # replaced by the overlay (oc-mirror catalog source)
+  sourceNamespace: openshift-marketplace

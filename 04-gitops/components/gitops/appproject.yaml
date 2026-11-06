@@ -1,0 +1,19 @@
+# Argo CD project for the platform applications. The repository URL is set by
+# the cluster overlay; only that repository can be used as a source (CM-5).
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: itsg33-platform
+  namespace: openshift-gitops
+  annotations:
+    itsg33/controls: "CM-5,AC-6"
+spec:
+  description: ITSG-33 platform configuration (this repository only)
+  sourceRepos:
+    - https://git.example.gc.ca/platform/ocp-itsg-33.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: "*"
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"

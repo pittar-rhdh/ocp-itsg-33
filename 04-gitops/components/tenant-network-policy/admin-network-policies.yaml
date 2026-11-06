@@ -1,0 +1,59 @@
+# Tier 1 tenant isolation (AD-09): traffic between tenant namespaces is denied
+# unless the tenant allows it with a NetworkPolicy (BANP), and tenants can
+# never reach platform namespaces (ANP, which tenants cannot override).
+#
+# API version: policy.networking.k8s.io/v1alpha1 in OpenShift. Check
+# `oc api-resources | grep -i adminnetworkpolicy` on 4.22 and follow the
+# release notes for the move to ClusterNetworkPolicy.
+apiVersion: policy.networking.k8s.io/v1alpha1
+kind: BaselineAdminNetworkPolicy
+metadata:
+  name: default                         # Only one BANP, named "default", is allowed
+  annotations:
+    itsg33/controls: "AC-4,SC-7"
+spec:
+  subject:
+    namespaces:
+      matchLabels:
+        itsg33/tenant: "true"
+  ingress:
+    - name: default-deny-ingress
+      action: Deny
+      from:
+        - namespaces: {}
+  egress:
+    - name: default-deny-egress-to-cluster
+      action: Deny
+      to:
+        - namespaces: {}
+---
+apiVersion: policy.networking.k8s.io/v1alpha1
+kind: AdminNetworkPolicy
+metadata:
+  name: itsg33-tenant-guardrails
+  annotations:
+    itsg33/controls: "AC-4,SC-7"
+spec:
+  priority: 10
+  subject:
+    namespaces:
+      matchLabels:
+        itsg33/tenant: "true"
+  egress:
+    - name: allow-dns
+      action: Allow
+      to:
+        - namespaces:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-dns
+      ports:
+        - portNumber: { protocol: UDP, port: 5353 }
+        - portNumber: { protocol: TCP, port: 5353 }
+    - name: deny-platform-namespaces
+      action: Deny
+      to:
+        - namespaces:
+            matchExpressions:
+              - key: kubernetes.io/metadata.name
+                operator: In
+                values: ["openshift-etcd", "openshift-kube-apiserver", "openshift-monitoring", "openshift-logging"]

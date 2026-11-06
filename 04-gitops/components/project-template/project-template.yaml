@@ -1,0 +1,132 @@
+# Default project request template (CM-2, CM-6, AC-4, SC-7): every new
+# project starts with restricted pod security, default-deny network policy
+# (with ingress, monitoring and DNS allowed), a quota, and default limits.
+# Projects are requested through Git or a ticket; self-provisioning is removed
+# by 04-gitops/05-lock-down-access.sh.
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: itsg33-project-request
+  namespace: openshift-config
+  annotations:
+    itsg33/controls: "CM-2,CM-6,AC-4,SC-7,SC-6"
+objects:
+  - apiVersion: project.openshift.io/v1
+    kind: Project
+    metadata:
+      name: ${PROJECT_NAME}
+      annotations:
+        openshift.io/description: ${PROJECT_DESCRIPTION}
+        openshift.io/display-name: ${PROJECT_DISPLAYNAME}
+        openshift.io/requester: ${PROJECT_REQUESTING_USER}
+      labels:
+        itsg33/tenant: "true"
+        data-classification: protected-b     # default; change per project through Git
+        pod-security.kubernetes.io/enforce: restricted
+        pod-security.kubernetes.io/audit: restricted
+        pod-security.kubernetes.io/warn: restricted
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    metadata:
+      name: admin
+      namespace: ${PROJECT_NAME}
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: admin
+    subjects:
+      - apiGroup: rbac.authorization.k8s.io
+        kind: User
+        name: ${PROJECT_ADMIN_USER}
+  - apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: default-deny-all
+      namespace: ${PROJECT_NAME}
+    spec:
+      podSelector: {}
+      policyTypes: ["Ingress", "Egress"]
+  - apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: allow-from-openshift-ingress
+      namespace: ${PROJECT_NAME}
+    spec:
+      podSelector: {}
+      ingress:
+        - from:
+            - namespaceSelector:
+                matchLabels:
+                  policy-group.network.openshift.io/ingress: ""
+      policyTypes: ["Ingress"]
+  - apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: allow-from-openshift-monitoring
+      namespace: ${PROJECT_NAME}
+    spec:
+      podSelector: {}
+      ingress:
+        - from:
+            - namespaceSelector:
+                matchLabels:
+                  network.openshift.io/policy-group: monitoring
+      policyTypes: ["Ingress"]
+  - apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: allow-dns-egress
+      namespace: ${PROJECT_NAME}
+    spec:
+      podSelector: {}
+      egress:
+        - to:
+            - namespaceSelector:
+                matchLabels:
+                  kubernetes.io/metadata.name: openshift-dns
+          ports:
+            - protocol: UDP
+              port: 5353
+            - protocol: TCP
+              port: 5353
+      policyTypes: ["Egress"]
+  - apiVersion: v1
+    kind: ResourceQuota
+    metadata:
+      name: default-quota
+      namespace: ${PROJECT_NAME}
+    spec:
+      hard:
+        requests.cpu: "8"
+        requests.memory: 16Gi
+        limits.memory: 32Gi
+        pods: "50"
+  - apiVersion: v1
+    kind: LimitRange
+    metadata:
+      name: default-limits
+      namespace: ${PROJECT_NAME}
+    spec:
+      limits:
+        - type: Container
+          default:
+            memory: 512Mi
+          defaultRequest:
+            cpu: 100m
+            memory: 256Mi
+parameters:
+  - name: PROJECT_NAME
+  - name: PROJECT_DISPLAYNAME
+  - name: PROJECT_DESCRIPTION
+  - name: PROJECT_ADMIN_USER
+  - name: PROJECT_REQUESTING_USER
+---
+apiVersion: config.openshift.io/v1
+kind: Project
+metadata:
+  name: cluster
+  annotations:
+    itsg33/controls: "CM-2,CM-6"
+spec:
+  projectRequestTemplate:
+    name: itsg33-project-request

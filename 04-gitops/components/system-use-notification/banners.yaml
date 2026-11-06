@@ -1,0 +1,30 @@
+# AC-8 System use notification: console banner and the `oc login` message.
+# Use the exact wording approved by the department.
+#
+# The web login page notice is a login template Secret
+# (openshift-config/itsg33-login-template) referenced by the OAuth resource in
+# the identity component. 04-gitops/03-create-secrets.sh creates it from the
+# reviewed HTML file named in LOGIN_TEMPLATE_FILE, because a template with
+# errors stops every user from logging in.
+apiVersion: console.openshift.io/v1
+kind: ConsoleNotification
+metadata:
+  name: itsg33-classification-banner
+  annotations:
+    itsg33/controls: "AC-8"
+spec:
+  text: "PROTECTED B — Authorized use only. Activity is monitored and logged."
+  location: BannerTopBottom
+  color: "#FFFFFF"
+  backgroundColor: "#00529B"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: motd
+  namespace: openshift
+  annotations:
+    itsg33/controls: "AC-8"
+data:
+  message: |
+    PROTECTED B — Authorized use only. Use of this system constitutes consent to monitoring.

@@ -1,0 +1,12 @@
+# Console log view (Observe > Logs) through the Cluster Observability Operator.
+apiVersion: observability.openshift.io/v1alpha1
+kind: UIPlugin
+metadata:
+  name: logging
+  annotations:
+    itsg33/controls: "AU-6,AU-7"
+spec:
+  type: Logging
+  logging:
+    lokiStack:
+      name: logging-loki

@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - applications.yaml
+patches:
+  # The departmental Git repository and branch (AD-12). Same value as
+  # root-app.yaml and gitops/kustomization.yaml.
+  - target:
+      kind: Application
+    patch: |-
+      - op: replace
+        path: /spec/source/repoURL
+        value: https://git.example.gc.ca/platform/ocp-itsg-33.git
+      - op: replace
+        path: /spec/source/targetRevision
+        value: main

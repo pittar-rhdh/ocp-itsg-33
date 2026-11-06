@@ -41,22 +41,14 @@ the system generates audit records for them.
 - Turn on **OVN ACL audit logging** for namespaces that hold Protected B data, so allowed and
   denied network flows are recorded.
 
-**Configuration example — API audit policy:**
+**Configuration — API audit policy:** in Git. File:
+`04-gitops/components/api-server/apiserver.yaml`.
 
-```yaml
-apiVersion: config.openshift.io/v1
-kind: APIServer
-metadata:
-  name: cluster
-spec:
-  audit:
-    profile: WriteRequestBodies
-    customRules:
-      - group: system:authenticated:oauth   # Human users: also record read request bodies
-        profile: AllRequestBodies
-      - group: ocp-platform-admins
-        profile: AllRequestBodies
-```
+`WriteRequestBodies` for everyone, plus `AllRequestBodies` for human users
+(`system:authenticated:oauth`) and `ocp-platform-admins`. The same file holds the API server TLS
+profile and etcd encryption, so one file owns the `APIServer` resource.
+
+See [how the configuration is applied](../platform-configuration.md).
 
 **Configuration example — network ACL audit logging for a namespace:**
 
@@ -218,63 +210,16 @@ Create the same configuration for the `master` role (and any custom pools).
 - Use **object lock / WORM retention** on long-term log storage where it's supported.
 - Restrict who can change `ClusterLogForwarder` resources, and alert on changes (see AU-6).
 
-**Configuration example — forward audit logs to the SIEM over TLS:**
+**Configuration — forward audit logs to the SIEM over TLS:** in Git. Files:
+`04-gitops/components/logging/collector-rbac.yaml`,
+`04-gitops/components/logging/clusterlogforwarder.yaml`.
 
-```yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: log-collector
-  namespace: openshift-logging
----
-# Grant the collector permission to collect each log type
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: log-collector-audit
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: collect-audit-logs
-subjects:
-  - kind: ServiceAccount
-    name: log-collector
-    namespace: openshift-logging
-# Create similar bindings for collect-infrastructure-logs and collect-application-logs
----
-apiVersion: observability.openshift.io/v1
-kind: ClusterLogForwarder
-metadata:
-  name: itsg33-siem
-  namespace: openshift-logging
-spec:
-  serviceAccount:
-    name: log-collector
-  outputs:
-    - name: siem-syslog
-      type: syslog
-      syslog:
-        url: tls://siem.example.gc.ca:6514
-        rfc: RFC5424
-        facility: local0
-      tls:
-        ca:
-          secretName: siem-tls
-          key: ca-bundle.crt
-        certificate:
-          secretName: siem-tls
-          key: tls.crt
-        key:
-          secretName: siem-tls
-          key: tls.key
-  pipelines:
-    - name: audit-to-siem
-      inputRefs: [audit]
-      outputRefs: [siem-syslog]
-    - name: infra-to-siem
-      inputRefs: [infrastructure]
-      outputRefs: [siem-syslog]
-```
+A `log-collector` service account with the `collect-audit-logs`, `collect-infrastructure-logs`,
+`collect-application-logs` and `logging-collector-logs-writer` cluster roles. The
+`ClusterLogForwarder` sends audit and infrastructure logs to the SIEM (syslog RFC 5424 over mutual
+TLS; Secret `siem-tls` created outside Git) and every log type to the on-cluster LokiStack.
+
+See [how the configuration is applied](../platform-configuration.md).
 
 > Other output types (`splunk`, `kafka`, `http`, `elasticsearch`, `cloudwatch`,
 > `azureMonitor`, `googleCloudLogging`, `lokiStack`, `otlp`) are available. Choose the one your SIEM
@@ -315,20 +260,13 @@ and records retention schedule (for example, 2 years online plus archive). On-cl
 LokiStack retention can be short (for example, 7 to 30 days) for operational use, because the
 SIEM and archive hold the official record.
 
-```yaml
-# LokiStack excerpt: on-cluster retention for operational search
-apiVersion: loki.grafana.com/v1
-kind: LokiStack
-metadata:
-  name: logging-loki
-  namespace: openshift-logging
-spec:
-  limits:
-    global:
-      retention:
-        days: 30
-  # ... storage, size, tenants omitted
-```
+**Configuration — LokiStack retention:** in Git. File:
+`04-gitops/components/logging/lokistack.yaml`.
+
+30 days of on-cluster search on the departmental S3 endpoint (Secret `logging-loki-s3` created
+outside Git); the SIEM keeps the record.
+
+See [how the configuration is applied](../platform-configuration.md).
 
 **Evidence:** SIEM and archive retention configuration; LokiStack spec.
 

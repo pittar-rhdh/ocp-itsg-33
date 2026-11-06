@@ -1,0 +1,32 @@
+# Cluster roles are bound to IdP groups, never to individual users, so the
+# departmental joiner/mover/leaver process also governs OpenShift access.
+# Group names come from the IdP "groups" claim.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: itsg33-platform-admins
+  annotations:
+    itsg33/controls: "AC-2,AC-5,AC-6"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: ocp-platform-admins
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: itsg33-security-auditors
+  annotations:
+    itsg33/controls: "AC-2,AC-5,AC-6,AU-6,CA-7"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-reader                 # Read-only access for assessors and the security team
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: ocp-security-auditors

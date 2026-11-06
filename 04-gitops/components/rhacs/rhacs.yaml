@@ -1,0 +1,52 @@
+# Advanced Cluster Security: Central and the secured cluster services on the
+# same cluster (AD-04).
+#
+# OFFLINE MODE CAN ONLY BE ENABLED WHEN CENTRAL IS FIRST CREATED (Red Hat RHACS
+# documentation, "Enabling offline mode"). Keep egress.connectivityPolicy in
+# this file from the first sync.
+#
+# After Central is running:
+#   04-gitops/04-rhacs-register-cluster.sh   creates the cluster registration
+#                                            secret for the SecuredCluster
+#   04-gitops/06-import-rhacs-feed.sh        uploads the offline vulnerability
+#                                            data (at least daily, RA-5(2))
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: stackrox
+  annotations:
+    itsg33/controls: "RA-5,SI-4"
+  labels:
+    openshift.io/cluster-monitoring: "true"
+---
+apiVersion: platform.stackrox.io/v1alpha1
+kind: Central
+metadata:
+  name: stackrox-central-services
+  namespace: stackrox
+  annotations:
+    itsg33/controls: "RA-5,RA-5(2),SI-3,SI-4,CM-7,SA-9"
+spec:
+  egress:
+    connectivityPolicy: Offline         # SA-9, AD-02: no outbound connections
+  central:
+    telemetry:
+      enabled: false                    # AD-08
+    exposure:
+      route:
+        enabled: true
+    db:
+      persistence:
+        persistentVolumeClaim:
+          storageClassName: csi-block   # replaced by the cluster overlay
+---
+apiVersion: platform.stackrox.io/v1alpha1
+kind: SecuredCluster
+metadata:
+  name: stackrox-secured-cluster-services
+  namespace: stackrox
+  annotations:
+    itsg33/controls: "RA-5,SI-4,CM-7,AC-4"
+spec:
+  clusterName: ocp1                     # replaced by the cluster overlay
+  centralEndpoint: central.stackrox.svc:443

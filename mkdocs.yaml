@@ -34,6 +34,11 @@ nav:
       - Run and Verify the Install: 03-cluster-install/run-install.md
   - 4 - ITSG-33 Configuration:
       - Overview: 04-itsg33-configuration/index.md
+      - GitOps Bootstrap: 04-itsg33-configuration/gitops-bootstrap.md
+      - Repository Layout: 04-itsg33-configuration/repository-layout.md
+      - Operators: 04-itsg33-configuration/operators.md
+      - Platform Configuration: 04-itsg33-configuration/platform-configuration.md
+      - ACM Governance: 04-itsg33-configuration/acm-governance.md
       - Control Families:
           - Overview: 04-itsg33-configuration/controls/index.md
           - AC - Access Control: 04-itsg33-configuration/controls/ac-access-control.md

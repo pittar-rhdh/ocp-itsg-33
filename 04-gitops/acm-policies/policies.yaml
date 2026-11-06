@@ -1,0 +1,343 @@
+# ITSG-33 verification policies for the hub's own cluster (local-cluster).
+#
+# Git (Argo CD) applies the configuration; these ACM policies independently
+# report whether it is in place (CA-7). They are "inform" only: they never
+# change the cluster, so there is one writer (Git) and one checker (ACM).
+# Results: Governance in the ACM console, or
+#   oc get policies -n itsg33-policies
+#
+# Plain Policy resources are used instead of PolicyGenerator: the documented
+# way to run PolicyGenerator inside OpenShift GitOps copies a binary labelled
+# "not FIPS compliant" into the Argo CD repo server (see AD-23).
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: itsg33-ac-6-no-self-provisioning
+  namespace: itsg33-policies
+  annotations:
+    policy.open-cluster-management.io/standards: ITSG-33
+    policy.open-cluster-management.io/categories: AC Access Control
+    policy.open-cluster-management.io/controls: AC-6 Least Privilege
+    policy.open-cluster-management.io/description: Authenticated users cannot create projects (self-provisioners has no oauth group).
+    itsg33/controls: "AC-6,CA-7"
+spec:
+  remediationAction: inform
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: itsg33-ac-6-no-self-provisioning
+        spec:
+          remediationAction: inform
+          severity: medium
+          object-templates:
+            - complianceType: mustnothave
+              objectDefinition:
+                apiVersion: rbac.authorization.k8s.io/v1
+                kind: ClusterRoleBinding
+                metadata:
+                  name: self-provisioners
+                subjects:
+                  - apiGroup: rbac.authorization.k8s.io
+                    kind: Group
+                    name: system:authenticated:oauth
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: itsg33-ac-8-login-banner
+  namespace: itsg33-policies
+  annotations:
+    policy.open-cluster-management.io/standards: ITSG-33
+    policy.open-cluster-management.io/categories: AC Access Control
+    policy.open-cluster-management.io/controls: AC-8 System Use Notification
+    policy.open-cluster-management.io/description: The console classification banner exists.
+    itsg33/controls: "AC-8,CA-7"
+spec:
+  remediationAction: inform
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: itsg33-ac-8-login-banner
+        spec:
+          remediationAction: inform
+          severity: medium
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: console.openshift.io/v1
+                kind: ConsoleNotification
+                metadata:
+                  name: itsg33-classification-banner
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: itsg33-ia-2-kubeadmin-removed
+  namespace: itsg33-policies
+  annotations:
+    policy.open-cluster-management.io/standards: ITSG-33
+    policy.open-cluster-management.io/categories: IA Identification and Authentication
+    policy.open-cluster-management.io/controls: IA-2 Identification and Authentication (Organizational Users)
+    policy.open-cluster-management.io/description: The kubeadmin bootstrap credential has been removed.
+    itsg33/controls: "IA-2,CA-7"
+spec:
+  remediationAction: inform
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: itsg33-ia-2-kubeadmin-removed
+        spec:
+          remediationAction: inform
+          severity: high
+          object-templates:
+            - complianceType: mustnothave
+              objectDefinition:
+                apiVersion: v1
+                kind: Secret
+                metadata:
+                  name: kubeadmin
+                  namespace: kube-system
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: itsg33-au-2-audit-profile
+  namespace: itsg33-policies
+  annotations:
+    policy.open-cluster-management.io/standards: ITSG-33
+    policy.open-cluster-management.io/categories: AU Audit and Accountability
+    policy.open-cluster-management.io/controls: AU-2 Audit Events
+    policy.open-cluster-management.io/description: The API audit profile records request bodies for writes.
+    itsg33/controls: "AU-2,CA-7"
+spec:
+  remediationAction: inform
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: itsg33-au-2-audit-profile
+        spec:
+          remediationAction: inform
+          severity: high
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: config.openshift.io/v1
+                kind: APIServer
+                metadata:
+                  name: cluster
+                spec:
+                  audit:
+                    profile: WriteRequestBodies
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: itsg33-au-4-log-forwarding
+  namespace: itsg33-policies
+  annotations:
+    policy.open-cluster-management.io/standards: ITSG-33
+    policy.open-cluster-management.io/categories: AU Audit and Accountability
+    policy.open-cluster-management.io/controls: AU-4 Audit Storage Capacity
+    policy.open-cluster-management.io/description: Audit logs are forwarded off the cluster to the SIEM.
+    itsg33/controls: "AU-4,CA-7"
+spec:
+  remediationAction: inform
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: itsg33-au-4-log-forwarding
+        spec:
+          remediationAction: inform
+          severity: high
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: observability.openshift.io/v1
+                kind: ClusterLogForwarder
+                metadata:
+                  name: itsg33-siem
+                  namespace: openshift-logging
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: itsg33-sc-28-etcd-encryption
+  namespace: itsg33-policies
+  annotations:
+    policy.open-cluster-management.io/standards: ITSG-33
+    policy.open-cluster-management.io/categories: SC System and Communications Protection
+    policy.open-cluster-management.io/controls: SC-28 Protection of Information at Rest
+    policy.open-cluster-management.io/description: etcd encryption uses AES-GCM.
+    itsg33/controls: "SC-28,CA-7"
+spec:
+  remediationAction: inform
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: itsg33-sc-28-etcd-encryption
+        spec:
+          remediationAction: inform
+          severity: high
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: config.openshift.io/v1
+                kind: APIServer
+                metadata:
+                  name: cluster
+                spec:
+                  encryption:
+                    type: aesgcm
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: itsg33-cm-7-mirrored-catalogs-only
+  namespace: itsg33-policies
+  annotations:
+    policy.open-cluster-management.io/standards: ITSG-33
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-7 Least Functionality
+    policy.open-cluster-management.io/description: The default (internet) operator catalogs are disabled.
+    itsg33/controls: "CM-7,CA-7"
+spec:
+  remediationAction: inform
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: itsg33-cm-7-mirrored-catalogs-only
+        spec:
+          remediationAction: inform
+          severity: medium
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: config.openshift.io/v1
+                kind: OperatorHub
+                metadata:
+                  name: cluster
+                spec:
+                  disableAllDefaultSources: true
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: itsg33-si-7-file-integrity
+  namespace: itsg33-policies
+  annotations:
+    policy.open-cluster-management.io/standards: ITSG-33
+    policy.open-cluster-management.io/categories: SI System and Information Integrity
+    policy.open-cluster-management.io/controls: SI-7 Software, Firmware, and Information Integrity
+    policy.open-cluster-management.io/description: File integrity monitoring is configured for worker nodes.
+    itsg33/controls: "SI-7,CA-7"
+spec:
+  remediationAction: inform
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: itsg33-si-7-file-integrity
+        spec:
+          remediationAction: inform
+          severity: medium
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: fileintegrity.openshift.io/v1alpha1
+                kind: FileIntegrity
+                metadata:
+                  name: worker-fileintegrity
+                  namespace: openshift-file-integrity
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: itsg33-ra-5-rhacs-offline
+  namespace: itsg33-policies
+  annotations:
+    policy.open-cluster-management.io/standards: ITSG-33
+    policy.open-cluster-management.io/categories: RA Risk Assessment
+    policy.open-cluster-management.io/controls: RA-5 Vulnerability Scanning
+    policy.open-cluster-management.io/description: RHACS Central runs in offline mode.
+    itsg33/controls: "RA-5,CA-7"
+spec:
+  remediationAction: inform
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: itsg33-ra-5-rhacs-offline
+        spec:
+          remediationAction: inform
+          severity: medium
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: platform.stackrox.io/v1alpha1
+                kind: Central
+                metadata:
+                  name: stackrox-central-services
+                  namespace: stackrox
+                spec:
+                  egress:
+                    connectivityPolicy: Offline
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: itsg33-ca-7-no-high-severity-failures
+  namespace: itsg33-policies
+  annotations:
+    policy.open-cluster-management.io/standards: ITSG-33
+    policy.open-cluster-management.io/categories: CA Security Assessment and Authorization
+    policy.open-cluster-management.io/controls: CA-7 Continuous Monitoring
+    policy.open-cluster-management.io/description: No high-severity Compliance Operator check is failing.
+    itsg33/controls: "CA-7,CA-7"
+spec:
+  remediationAction: inform
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: itsg33-ca-7-no-high-severity-failures
+        spec:
+          remediationAction: inform
+          severity: high
+          object-templates:
+            - complianceType: mustnothave
+              objectDefinition:
+                apiVersion: compliance.openshift.io/v1alpha1
+                kind: ComplianceCheckResult
+                metadata:
+                  namespace: openshift-compliance
+                  labels:
+                    compliance.openshift.io/check-status: FAIL
+                    compliance.openshift.io/check-severity: high

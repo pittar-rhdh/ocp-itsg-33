@@ -1,0 +1,37 @@
+# Built-in OAuth server with the departmental OIDC identity provider (AD-03),
+# session limits, and the login page with the system use notification.
+#
+# Created outside Git by 04-gitops/03-create-secrets.sh (never committed):
+#   Secret    openshift-config/gc-sso-client-secret  (key: clientSecret)
+#   ConfigMap openshift-config/gc-sso-ca             (key: ca.crt, IdP CA bundle)
+# The login template Secret comes from the system-use-notification component.
+apiVersion: config.openshift.io/v1
+kind: OAuth
+metadata:
+  name: cluster
+  annotations:
+    itsg33/controls: "IA-2,IA-2(1),IA-2(2),IA-5,IA-8,AC-2,AC-8,AC-11,AC-12"
+spec:
+  identityProviders:
+    - name: gc-sso
+      mappingMethod: claim
+      type: OpenID
+      openID:
+        clientID: openshift-prod
+        clientSecret:
+          name: gc-sso-client-secret
+        ca:
+          name: gc-sso-ca
+        issuer: https://sso.example.gc.ca/realms/ocp
+        claims:
+          preferredUsername: [preferred_username]
+          name: [name]
+          email: [email]
+          groups: [groups]
+        extraScopes: [email, profile, groups]
+  tokenConfig:
+    accessTokenInactivityTimeout: 15m0s     # AC-11 / AC-12: departmental value
+    accessTokenMaxAgeSeconds: 28800         # 8 hours
+  templates:
+    login:
+      name: itsg33-login-template           # AC-8

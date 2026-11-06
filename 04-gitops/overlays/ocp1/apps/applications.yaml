@@ -1,0 +1,91 @@
+# The platform applications. Each one is a layer of this cluster's overlay.
+# repoURL and targetRevision are set for all of them in kustomization.yaml.
+#
+# Sync behaviour (AD-22):
+#   selfHeal: true    drift from Git is reverted (CM-6)
+#   prune: false      objects removed from Git are reported (OutOfSync) and
+#                     deleted by a person, never automatically: many of them
+#                     are cluster singletons (OAuth, APIServer) or hold data
+#   retry             CRs wait for their operator (install plans are approved
+#                     by hand, CM-3), so syncs retry until the CRDs exist
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: itsg33-gitops
+  namespace: openshift-gitops
+  annotations:
+    itsg33/controls: "CM-2,CM-5,AC-6"
+spec:
+  project: itsg33-platform
+  source:
+    repoURL: REPO
+    targetRevision: REV
+    path: 04-gitops/overlays/ocp1/gitops
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated: {prune: false, selfHeal: true}
+    syncOptions: [ServerSideApply=true]
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: itsg33-operators
+  namespace: openshift-gitops
+  annotations:
+    itsg33/controls: "CM-2,CM-3,CM-11,SA-12"
+spec:
+  project: itsg33-platform
+  source:
+    repoURL: REPO
+    targetRevision: REV
+    path: 04-gitops/overlays/ocp1/operators
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated: {prune: false, selfHeal: true}
+    syncOptions: [ServerSideApply=true]
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: itsg33-config
+  namespace: openshift-gitops
+  annotations:
+    itsg33/controls: "CM-2,CM-6"
+spec:
+  project: itsg33-platform
+  source:
+    repoURL: REPO
+    targetRevision: REV
+    path: 04-gitops/overlays/ocp1/config
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated: {prune: false, selfHeal: true}
+    syncOptions: [ServerSideApply=true, SkipDryRunOnMissingResource=true]
+    retry:
+      limit: -1                    # keep retrying until the operators are installed
+      backoff: {duration: 1m, factor: 2, maxDuration: 30m}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: itsg33-policies
+  namespace: openshift-gitops
+  annotations:
+    itsg33/controls: "CA-7"
+spec:
+  project: itsg33-platform
+  source:
+    repoURL: REPO
+    targetRevision: REV
+    path: 04-gitops/overlays/ocp1/policies
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
+    syncOptions: [ServerSideApply=true, SkipDryRunOnMissingResource=true]
+    retry:
+      limit: -1
+      backoff: {duration: 1m, factor: 2, maxDuration: 30m}

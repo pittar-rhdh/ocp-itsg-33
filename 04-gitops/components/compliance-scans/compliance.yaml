@@ -1,0 +1,61 @@
+# Daily Compliance Operator scans (CA-2, CA-7, CM-6, RA-5). Results are the
+# Phase 5 evidence. Remediations are never applied automatically: a failed
+# rule is fixed in Git and reviewed like any other change (CM-3).
+apiVersion: compliance.openshift.io/v1alpha1
+kind: ScanSetting
+metadata:
+  name: itsg33-pbmm
+  namespace: openshift-compliance
+  annotations:
+    itsg33/controls: "CA-2,CA-7,CM-6,AU-11"
+schedule: "0 1 * * *"                  # daily at 01:00
+roles:
+  - master
+  - worker
+rawResultStorage:
+  rotation: 90                         # 90 sets of raw ARF results (align with AU-11)
+  size: 5Gi
+  storageClassName: csi-block          # replaced by the cluster overlay
+autoApplyRemediations: false
+autoUpdateRemediations: false
+---
+# Moderate baseline with departmental parameter values. Disable a rule only
+# with a rationale that points to the compensating control in the SSP.
+apiVersion: compliance.openshift.io/v1alpha1
+kind: TailoredProfile
+metadata:
+  name: ocp4-itsg33-pbmm
+  namespace: openshift-compliance
+  annotations:
+    itsg33/controls: "CM-6,CA-2"
+spec:
+  extends: ocp4-moderate
+  title: "ITSG-33 PBMM tailored profile for the OpenShift platform"
+  description: >-
+    Extends the NIST SP 800-53 Moderate content with GC PBMM parameter values.
+  setValues:
+    - name: ocp4-var-oauth-inactivity-timeout
+      rationale: "AC-11 / AC-12: departmental session inactivity limit of 15 minutes"
+      value: "15m0s"
+---
+apiVersion: compliance.openshift.io/v1alpha1
+kind: ScanSettingBinding
+metadata:
+  name: itsg33-pbmm
+  namespace: openshift-compliance
+  annotations:
+    itsg33/controls: "CA-2,CA-7,CM-6,RA-5"
+profiles:
+  - apiGroup: compliance.openshift.io/v1alpha1
+    kind: TailoredProfile
+    name: ocp4-itsg33-pbmm
+  - apiGroup: compliance.openshift.io/v1alpha1
+    kind: Profile
+    name: ocp4-moderate-node
+  - apiGroup: compliance.openshift.io/v1alpha1
+    kind: Profile
+    name: rhcos4-moderate
+settingsRef:
+  apiGroup: compliance.openshift.io/v1alpha1
+  kind: ScanSetting
+  name: itsg33-pbmm

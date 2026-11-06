@@ -1,0 +1,69 @@
+# Service account for the log collector, allowed to collect every log type
+# and to write to the on-cluster LokiStack.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: log-collector
+  namespace: openshift-logging
+  annotations:
+    itsg33/controls: "AU-2,AU-12"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: itsg33-log-collector-audit
+  annotations:
+    itsg33/controls: "AU-2,AU-12"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: collect-audit-logs
+subjects:
+  - kind: ServiceAccount
+    name: log-collector
+    namespace: openshift-logging
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: itsg33-log-collector-infrastructure
+  annotations:
+    itsg33/controls: "AU-2,AU-12"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: collect-infrastructure-logs
+subjects:
+  - kind: ServiceAccount
+    name: log-collector
+    namespace: openshift-logging
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: itsg33-log-collector-application
+  annotations:
+    itsg33/controls: "AU-2,AU-12"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: collect-application-logs
+subjects:
+  - kind: ServiceAccount
+    name: log-collector
+    namespace: openshift-logging
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: itsg33-log-collector-lokistack-writer
+  annotations:
+    itsg33/controls: "AU-4,AU-9"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: logging-collector-logs-writer
+subjects:
+  - kind: ServiceAccount
+    name: log-collector
+    namespace: openshift-logging

@@ -23,6 +23,9 @@ version pins.
 5. Operators start at the head of their default channel. Pin channels and minimum versions
    deliberately, using the report from `01-mirror/03-list-operator-channels.sh`. See
    [ImageSetConfiguration](../01-mirroring/imageset-configuration.md#operator-entries).
+6. The channel an operator is **installed** from is set by its Subscription in
+   `04-gitops/components/operators/` ([Operators](../04-itsg33-configuration/operators.md)). It
+   must be one of the channels mirrored here; change both in the same pull request.
 
 ## What is pinned
 

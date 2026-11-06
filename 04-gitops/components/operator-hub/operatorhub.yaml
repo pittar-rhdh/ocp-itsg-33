@@ -1,0 +1,12 @@
+# Only the mirrored catalogs are available (CM-7, CM-11). Phase 3 set this on
+# Day 1; Git owns it from now on. The mirrored CatalogSources themselves come
+# from the oc-mirror cluster-resources and change with every import, so they
+# are applied by the import procedure, not from this repository.
+apiVersion: config.openshift.io/v1
+kind: OperatorHub
+metadata:
+  name: cluster
+  annotations:
+    itsg33/controls: "CM-7,CM-11,SA-12"
+spec:
+  disableAllDefaultSources: true

@@ -1,0 +1,53 @@
+# Forward audit and infrastructure logs to the departmental SIEM over mutual
+# TLS (AU-4, AU-6, AU-9), and every log type to the on-cluster LokiStack.
+#
+# Created outside Git by 04-gitops/03-create-secrets.sh:
+#   Secret openshift-logging/siem-tls (ca-bundle.crt, tls.crt, tls.key)
+# Output TLS follows the cluster API server TLS profile unless set here.
+apiVersion: observability.openshift.io/v1
+kind: ClusterLogForwarder
+metadata:
+  name: itsg33-siem
+  namespace: openshift-logging
+  annotations:
+    itsg33/controls: "AU-2,AU-3,AU-4,AU-6,AU-9,AU-12,SC-8"
+spec:
+  serviceAccount:
+    name: log-collector
+  outputs:
+    - name: siem-syslog
+      type: syslog
+      syslog:
+        url: tls://siem.example.gc.ca:6514
+        rfc: RFC5424
+        facility: local0
+      tls:
+        ca:
+          secretName: siem-tls
+          key: ca-bundle.crt
+        certificate:
+          secretName: siem-tls
+          key: tls.crt
+        key:
+          secretName: siem-tls
+          key: tls.key
+    - name: default-lokistack
+      type: lokiStack
+      lokiStack:
+        target:
+          name: logging-loki
+          namespace: openshift-logging
+        authentication:
+          token:
+            from: serviceAccount
+      tls:
+        ca:
+          configMapName: openshift-service-ca.crt
+          key: service-ca.crt
+  pipelines:
+    - name: audit-and-infra-to-siem
+      inputRefs: [audit, infrastructure]
+      outputRefs: [siem-syslog]
+    - name: all-to-lokistack
+      inputRefs: [application, infrastructure, audit]
+      outputRefs: [default-lokistack]

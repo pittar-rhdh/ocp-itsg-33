@@ -1,0 +1,17 @@
+# Applied once, by 04-gitops/01-bootstrap-gitops.sh, before Argo CD exists.
+# After that, the same objects are owned by the itsg33-operators and
+# itsg33-gitops applications, so later changes go through Git.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../components/operators/openshift-gitops-operator
+  - ../components/gitops-rbac
+patches:
+  # Same catalog source as the cluster overlay (the oc-mirror v2 name for the
+  # redhat-operator-index:v4.22 catalog). Change both together.
+  - target:
+      kind: Subscription
+    patch: |-
+      - op: replace
+        path: /spec/source
+        value: cs-redhat-operator-index-v4-22

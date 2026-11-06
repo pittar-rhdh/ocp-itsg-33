@@ -1,0 +1,27 @@
+# Settings for the default Argo CD instance that the GitOps operator creates
+# (openshift-gitops/openshift-gitops). Applied with server-side apply, so only
+# the fields below are owned by Git; the operator keeps its other defaults.
+#
+# The Git server CA and the repository credentials are NOT here: the bootstrap
+# script (04-gitops/01-bootstrap-gitops.sh) adds them, because the operator
+# reads spec.tls.initialCerts only when it first creates the instance.
+apiVersion: argoproj.io/v1beta1
+kind: ArgoCD
+metadata:
+  name: openshift-gitops
+  namespace: openshift-gitops
+  annotations:
+    itsg33/controls: "AC-2,AC-3,AC-6,CM-5"
+spec:
+  # Annotation tracking: objects that other controllers copy (for example the
+  # ACM policies replicated into the local-cluster namespace) are not mistaken
+  # for objects managed by Argo CD.
+  resourceTrackingMethod: annotation
+  rbac:
+    # Users who are not in a group below get no access (AC-3, AC-6).
+    defaultPolicy: ""
+    scopes: "[groups]"
+    # Groups come from the cluster identity provider (Phase 4 identity component).
+    policy: |
+      g, ocp-platform-admins, role:admin
+      g, ocp-security-auditors, role:readonly

@@ -1,0 +1,78 @@
+# Namespace for the ITSG-33 policies, and placement on the hub itself
+# (local-cluster) through the built-in "global" cluster set.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: itsg33-policies
+  annotations:
+    itsg33/controls: "CA-7"
+---
+apiVersion: cluster.open-cluster-management.io/v1beta2
+kind: ManagedClusterSetBinding
+metadata:
+  name: global
+  namespace: itsg33-policies
+  annotations:
+    itsg33/controls: "CA-7"
+spec:
+  clusterSet: global
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: itsg33-local-cluster
+  namespace: itsg33-policies
+  annotations:
+    itsg33/controls: "CA-7"
+spec:
+  clusterSets: [global]
+  predicates:
+    - requiredClusterSelector:
+        labelSelector:
+          matchExpressions:
+            - key: local-cluster
+              operator: In
+              values: ["true"]
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: itsg33-local-cluster
+  namespace: itsg33-policies
+  annotations:
+    itsg33/controls: "CA-7"
+placementRef:
+  apiGroup: cluster.open-cluster-management.io
+  kind: Placement
+  name: itsg33-local-cluster
+subjects:
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: itsg33-ac-6-no-self-provisioning
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: itsg33-ac-8-login-banner
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: itsg33-ia-2-kubeadmin-removed
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: itsg33-au-2-audit-profile
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: itsg33-au-4-log-forwarding
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: itsg33-sc-28-etcd-encryption
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: itsg33-cm-7-mirrored-catalogs-only
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: itsg33-si-7-file-integrity
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: itsg33-ra-5-rhacs-offline
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: itsg33-ca-7-no-high-severity-failures

@@ -39,38 +39,14 @@ architecture decision **AD-03**.
 - Shared accounts are not allowed. The break-glass `kubeconfig` is held in a vault, and checking it
   out triggers an alert.
 
-**Configuration example — OIDC identity provider (built-in OAuth model):**
+**Configuration — OIDC identity provider (built-in OAuth model):** in Git. File:
+`04-gitops/components/identity/oauth.yaml`.
 
-```yaml
-apiVersion: config.openshift.io/v1
-kind: OAuth
-metadata:
-  name: cluster
-spec:
-  identityProviders:
-    - name: gc-sso
-      mappingMethod: claim
-      type: OpenID
-      openID:
-        clientID: openshift-prod
-        clientSecret:
-          name: gc-sso-client-secret       # Secret in openshift-config
-        ca:
-          name: gc-sso-ca                  # ConfigMap in openshift-config with the IdP CA bundle
-        issuer: https://sso.example.gc.ca/realms/ocp
-        claims:
-          preferredUsername: [preferred_username]
-          name: [name]
-          email: [email]
-          groups: [groups]
-        extraScopes: [email, profile, groups]
-  tokenConfig:
-    accessTokenInactivityTimeout: 15m0s
-    accessTokenMaxAgeSeconds: 28800
-  templates:
-    login:
-      name: itsg33-login-template
-```
+The `gc-sso` OpenID provider with `preferred_username`, `name`, `email` and `groups` claims, the
+session limits (AC-11, AC-12) and the login template (AC-8). The client secret and the IdP CA are
+created outside Git by `04-gitops/03-create-secrets.sh`.
+
+See [how the configuration is applied](../platform-configuration.md).
 
 **Configuration example — direct external OIDC (excerpt):**
 
@@ -172,45 +148,14 @@ Service account identifiers are namespaced (`system:serviceaccount:<ns>:<name>`)
 - **IA-5(7) No embedded unencrypted static authenticators:** RHACS policies and CI secret scanning
   detect secrets in images or environment variables. Use External Secrets with a vault instead.
 
-**Configuration example — cert-manager issuer for departmental PKI (ACME or CA issuer):**
+**Configuration — cert-manager issuer for the departmental PKI:** in Git. File:
+`04-gitops/components/cert-manager-pki/cert-manager.yaml`.
 
-```yaml
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: gc-dept-pki
-spec:
-  acme:
-    server: https://acme.pki.example.gc.ca/directory
-    privateKeySecretRef:
-      name: gc-dept-pki-account-key
-    solvers:
-      - dns01:
-          rfc2136:
-            nameserver: 10.0.0.53:53
-            tsigKeyName: ocp-acme
-            tsigAlgorithm: HMACSHA256
-            tsigSecretSecretRef:
-              name: tsig-secret
-              key: tsig-secret-key
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: api-server-cert
-  namespace: openshift-config
-spec:
-  secretName: api-server-cert
-  dnsNames: [api.prod.example.gc.ca]
-  duration: 2160h       # 90 days
-  renewBefore: 360h     # 15 days
-  privateKey:
-    algorithm: ECDSA
-    size: 384
-  issuerRef:
-    kind: ClusterIssuer
-    name: gc-dept-pki
-```
+An ACME `ClusterIssuer` with DNS-01 (RFC 2136) and a 90-day ECDSA P-384 certificate for the API
+server. This component is optional and not enabled in the example overlay until the departmental
+ACME service exists.
+
+See [how the configuration is applied](../platform-configuration.md).
 
 **Evidence:**
 

@@ -1,0 +1,27 @@
+# Operators for cluster ocp1. Every Subscription uses manual install plan
+# approval (04-gitops/02-approve-installplans.sh) and the mirrored catalog.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../../components/operators/openshift-gitops-operator
+  - ../../../components/operators/advanced-cluster-management
+  - ../../../components/operators/rhacs-operator
+  - ../../../components/operators/compliance-operator
+  - ../../../components/operators/file-integrity-operator
+  - ../../../components/operators/openshift-cert-manager-operator
+  - ../../../components/operators/openshift-external-secrets-operator   # needs cert-manager first
+  - ../../../components/operators/loki-operator                         # same channel as cluster-logging
+  - ../../../components/operators/cluster-logging
+  - ../../../components/operators/cluster-observability-operator
+  - ../../../components/operators/redhat-oadp-operator
+  - ../../../components/operators/cincinnati-operator
+patches:
+  # oc-mirror v2 names the CatalogSource after the catalog image:
+  # registry.redhat.io/redhat/redhat-operator-index:v4.22 -> cs-redhat-operator-index-v4-22
+  # Check with: oc get catalogsource -n openshift-marketplace
+  - target:
+      kind: Subscription
+    patch: |-
+      - op: replace
+        path: /spec/source
+        value: cs-redhat-operator-index-v4-22

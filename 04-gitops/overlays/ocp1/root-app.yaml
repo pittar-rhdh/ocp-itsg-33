@@ -1,0 +1,24 @@
+# Root ("app of apps") Application for cluster ocp1. Applied once by
+# 04-gitops/01-bootstrap-gitops.sh; everything else comes from Git.
+# Set repoURL to GIT_REMOTE_URL (02-high-side/settings.env) and keep it the
+# same in apps/kustomization.yaml and gitops/kustomization.yaml.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: itsg33-root
+  namespace: openshift-gitops
+  annotations:
+    itsg33/controls: "CM-2,CM-3,CM-5"
+spec:
+  project: default
+  source:
+    repoURL: https://git.example.gc.ca/platform/ocp-itsg-33.git
+    targetRevision: main
+    path: 04-gitops/overlays/ocp1/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openshift-gitops
+  syncPolicy:
+    automated:
+      prune: true          # child Applications only
+      selfHeal: true

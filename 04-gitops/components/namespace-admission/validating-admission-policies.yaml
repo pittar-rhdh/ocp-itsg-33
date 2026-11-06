@@ -1,0 +1,76 @@
+# Admission guardrails for namespaces (AC-3, AC-4, AC-16, SC-7).
+#
+# 1. Tenant namespaces (label itsg33/tenant=true, set by the project template)
+#    must carry a data-classification label.
+# 2. Namespaces placed in a CUDN zone must also carry the primary-UDN label,
+#    and platform namespaces can never join a zone (AD-09, tier 2).
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: itsg33-require-classification-label
+  annotations:
+    itsg33/controls: "AC-16,AC-3"
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["namespaces"]
+  validations:
+    - expression: >-
+        has(object.metadata.labels) &&
+        'data-classification' in object.metadata.labels &&
+        object.metadata.labels['data-classification'] in ['unclassified','protected-a','protected-b']
+      message: "Tenant namespaces must carry a data-classification label (unclassified, protected-a, protected-b)."
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: itsg33-require-classification-label
+  annotations:
+    itsg33/controls: "AC-16,AC-3"
+spec:
+  policyName: itsg33-require-classification-label
+  validationActions: ["Deny", "Audit"]
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        itsg33/tenant: "true"
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: itsg33-zone-network-consistency
+  annotations:
+    itsg33/controls: "AC-4,SC-7"
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["namespaces"]
+  validations:
+    - expression: >-
+        !(has(object.metadata.labels) && 'itsg33/zone' in object.metadata.labels &&
+          object.metadata.labels['itsg33/zone'] in ['oz','rz']) ||
+        'k8s.ovn.org/primary-user-defined-network' in object.metadata.labels
+      message: "Namespaces in a CUDN zone (oz, rz) must be created with the k8s.ovn.org/primary-user-defined-network label."
+    - expression: >-
+        !(has(object.metadata.labels) && 'itsg33/zone' in object.metadata.labels) ||
+        !(object.metadata.name == 'default' || object.metadata.name.startsWith('openshift-') ||
+          object.metadata.name.startsWith('kube-'))
+      message: "Platform namespaces must not be assigned to a CUDN zone."
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: itsg33-zone-network-consistency
+  annotations:
+    itsg33/controls: "AC-4,SC-7"
+spec:
+  policyName: itsg33-zone-network-consistency
+  validationActions: ["Deny", "Audit"]

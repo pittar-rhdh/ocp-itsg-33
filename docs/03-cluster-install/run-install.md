@@ -91,7 +91,7 @@ directory (it is Protected B once populated) with the change record.
 | Credential | Action |
 |---|---|
 | `auth/kubeconfig` (system:admin) | Break-glass. Seal in the departmental vault immediately; remove from the provisioner once the identity provider works (AC-2, AC-6(9)). |
-| `auth/kubeadmin-password` | Keep sealed until an identity provider and a cluster-admin group work (Phase 4), then delete the `kubeadmin` secret (`oc delete secret kubeadmin -n kube-system`). |
+| `auth/kubeadmin-password` | Keep sealed until an identity provider and a cluster-admin group work (Phase 4), then delete the `kubeadmin` secret with `04-gitops/05-lock-down-access.sh`. |
 | BMC passwords | Rotate on every BMC after installation and update the `BareMetalHost` secrets in `openshift-machine-api` (Phase 6 SOP); delete `bmc-credentials.env` and the install-config backup (IA-5). |
 | `kni` sudo rule | Remove it (or decommission the provisioner) after installation (AC-6). |
 | SSH key for `core` | Keep the private key in the vault; node SSH access is for break-glass only (AC-17). |

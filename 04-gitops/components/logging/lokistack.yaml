@@ -1,0 +1,31 @@
+# Short-term, on-cluster log search (AD-07) on the departmental S3 endpoint
+# (AD-14). The SIEM is the system of record for retention (AU-11).
+#
+# Created outside Git by 04-gitops/03-create-secrets.sh:
+#   Secret openshift-logging/logging-loki-s3 (access_key_id, access_key_secret,
+#   bucketnames, endpoint, region)
+# The cluster overlay sets the storage class of the vendor CSI driver (AD-13).
+apiVersion: loki.grafana.com/v1
+kind: LokiStack
+metadata:
+  name: logging-loki
+  namespace: openshift-logging
+  annotations:
+    itsg33/controls: "AU-4,AU-6,AU-7,AU-9,AU-11"
+spec:
+  managementState: Managed
+  size: 1x.small
+  limits:
+    global:
+      retention:
+        days: 30                          # operational search window; SIEM keeps the record
+  storage:
+    schemas:
+      - version: v13
+        effectiveDate: "2026-01-01"       # a date in the past when first deployed
+    secret:
+      name: logging-loki-s3
+      type: s3
+  storageClassName: csi-block             # replaced by the cluster overlay
+  tenants:
+    mode: openshift-logging

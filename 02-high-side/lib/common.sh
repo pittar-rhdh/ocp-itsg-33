@@ -14,7 +14,7 @@ registry_endpoint() { echo "${REGISTRY_FQDN}:${REGISTRY_PORT}"; }
 # --- Import ledger ------------------------------------------------------------------
 # Tab-separated, append-only record of every accepted and imported transfer:
 #   time  transfer-id  event  sha256(SHA256SUMS)  user  detail
-# events: accepted | imported | import-failed | rhacs-staged
+# events: accepted | imported | import-failed | rhacs-staged | rhacs-imported (Phase 4)
 ledger_add() {
   local id="$1" event="$2" digest="${3:--}" detail="${4:--}"
   mkdir -p "$(dirname "${HS_LEDGER}")"

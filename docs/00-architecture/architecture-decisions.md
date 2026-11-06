@@ -38,6 +38,8 @@ choice, the rationale, and the approver.
 | AD-19 | Update path | OpenShift Update Service on the cluster, fed by mirrored graph data; EUS-to-EUS for y-stream upgrades | Default | Manual upgrades to an explicit release digest | SI-2, CM-3 |
 | AD-20 | Application image source | Tenant images come from a departmental registry. The mirror registry holds Red Hat and approved third-party content only. | Department | A separate organization in the mirror registry | CM-11, SA-12, RA-5 |
 | AD-21 | Mirror registry runtime and access | Rootless, under a dedicated service account; all content in one organization; push-only and pull-only robot accounts; one break-glass administrator | Default | Root (system) install; LDAP authentication for named registry users | AC-2, AC-6, IA-5 |
+| AD-22 | GitOps operating model | Default Argo CD instance (`openshift-gitops`) with a cluster-admin application controller, restricted by an AppProject to this repository; root app plus four layered applications; server-side apply; `selfHeal` on, automatic prune off for configuration; every Subscription on manual install plan approval | Default | A dedicated Argo CD instance with scoped ClusterRoles; ACM-distributed GitOps | CM-2, CM-3, CM-5, CM-6, AC-6 |
+| AD-23 | Governance policy authoring | Plain ACM `Policy` resources, `inform` only, as an independent check of what Git applies; no in-cluster PolicyGenerator (the documented GitOps integration copies a plugin binary labelled not FIPS-compliant into the Argo CD repo server) | Default | PolicyGenerator run in low-side CI with committed output; `enforce` policies instead of Argo CD | CA-7, CM-6, SC-13 |
 
 ## Recording a decision
 

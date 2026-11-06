@@ -1,0 +1,35 @@
+# Advanced Cluster Management: governance policies (installs multicluster-engine itself)
+# Channel: confirm against the mirrored catalog with
+#   01-mirror/03-list-operator-channels.sh advanced-cluster-management
+# The catalog source name is set for every Subscription by the cluster overlay.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: open-cluster-management
+  annotations:
+    itsg33/controls: "CA-2,CA-7,CM-6"
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: open-cluster-management
+  namespace: open-cluster-management
+  annotations:
+    itsg33/controls: "CA-2,CA-7,CM-6"
+spec:
+  targetNamespaces:
+    - open-cluster-management
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: advanced-cluster-management
+  namespace: open-cluster-management
+  annotations:
+    itsg33/controls: "CA-2,CA-7,CM-6"
+spec:
+  name: advanced-cluster-management
+  channel: release-2.16
+  installPlanApproval: Manual             # CM-3: every install and update is approved
+  source: redhat-operators                # replaced by the overlay (oc-mirror catalog source)
+  sourceNamespace: openshift-marketplace

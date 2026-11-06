@@ -71,7 +71,7 @@ disconnected **high side**, through a controlled transfer.
  |   |                                            ACM, RHACS Central, GitOps              |   |
  |   |                                          - Tenant namespaces (restricted-v2 SCC,  |   |
  |   |                                            default-deny NetworkPolicy)            |   |
- |   |  OVN-Kubernetes (IPsec east-west), FIPS mode, RHCOS with LUKS (TPM2 and/or Tang)  |   |
+ |   |  OVN-Kubernetes (IPsec east-west), FIPS mode, RHCOS with LUKS bound to TPM 2.0    |   |
  |   +----------------------------------------------------------------------------------+   |
  +------------------------------------------+-----------------------------------------------+
                                             |
@@ -104,7 +104,6 @@ disconnected **high side**, through a controlled transfer.
 | **Red Hat Advanced Cluster Management** | Governance policies and compliance reporting for the cluster (`local-cluster`) | CA-7, CM-2, CM-3, CM-6, CM-8 |
 | **Red Hat Advanced Cluster Security** | Vulnerability management (offline feeds), admission control, runtime threat detection, network graph | RA-5, SI-3, SI-4, CM-7, IR-4 |
 | **Vendor CSI driver** (external storage) | Persistent volumes from departmental enterprise storage | SC-28, CP-9 |
-| **NBDE Tang servers** (optional) | Network-Bound Disk Encryption key servers on the high side | SC-28, SC-12 |
 
 The exact operator list, channels, and versions that get mirrored are pinned in
 [`versions.env`](../reference/versions.md) and in the Phase 1 `ImageSetConfiguration`.
@@ -368,8 +367,9 @@ Consequences for the design:
   ITSP.40.062 (TLS 1.2 minimum with approved cipher suites, or TLS 1.3 only).
 - **Certificates** for the mirror registry, ingress, and API come from the departmental PKI. The
   PKI root and intermediates are added to the cluster trust bundle at install time.
-- **Disk encryption:** RHCOS root disks use LUKS bound to TPM2, Tang (NBDE), or both, configured
-  at install time (AD-06).
+- **Disk encryption:** RHCOS root disks use LUKS2 bound to each node's TPM 2.0, configured at
+  install time (AD-06). Red Hat supports Tang (NBDE) for disk encryption only on UPI installs, so
+  it is not used in this IPI design.
 - **Post-quantum readiness:** OpenShift 4.22 adds PQC readiness features (for example, hybrid
   ML-KEM key exchange where enabled). Track the GC PQC migration roadmap and test these features
   before using them for Protected B.

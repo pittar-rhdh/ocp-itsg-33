@@ -6,6 +6,7 @@
 #   oc-mirror         oc-mirror.rhel9.tar.gz (same release directory)
 #   mirror-registry   mirror-registry-<arch>.tar.gz (MIRROR_REGISTRY_VERSION)
 #   roxctl            RHACS CLI (RHACS_VERSION, optional)
+#   butane            MachineConfig generator (BUTANE_VERSION), used in Phase 3
 #
 # Integrity (SA-12, SI-7): the OpenShift client and mirror-registry checksum lists
 # are verified against the Red Hat release key before any file is trusted. The
@@ -83,6 +84,18 @@ if [[ -n "${RHACS_VERSION}" ]]; then
   cp "${WORK}/acs-sums.txt" "${DEST}/sha256sum.rhacs.unsigned.txt"
 else
   warn "RHACS_VERSION is empty in versions.env; skipping roxctl"
+fi
+
+# --- Butane (Phase 3: install-time MachineConfigs) ----------------------------------
+if [[ -n "${BUTANE_VERSION}" ]]; then
+  BUTANE_BASE="${CONTENT_BASE_URL}/openshift-v4/clients/butane/v${BUTANE_VERSION}"
+  fetch "${BUTANE_BASE}/sha256sum.txt" "${WORK}/butane-sums.txt"
+  warn "Butane publishes an unsigned checksum list; integrity relies on TLS to mirror.openshift.com"
+  fetch_and_check "${BUTANE_BASE}" "butane-${OCP_ARCH}" "${WORK}/butane-sums.txt"
+  chmod 0755 "${DEST}/butane-${OCP_ARCH}"
+  cp "${WORK}/butane-sums.txt" "${DEST}/sha256sum.butane.unsigned.txt"
+else
+  warn "BUTANE_VERSION is empty in versions.env; skipping butane"
 fi
 
 # --- Record ---------------------------------------------------------------------

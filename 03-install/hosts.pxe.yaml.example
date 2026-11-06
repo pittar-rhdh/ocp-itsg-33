@@ -1,0 +1,69 @@
+# -----------------------------------------------------------------------------
+# Host inventory EXAMPLE for bare-metal IPI with a PXE provisioning network
+# (PROVISIONING_METHOD=pxe). Not validated. See hosts.virtualmedia.yaml.example
+# for the general rules; differences for PXE:
+#
+#   - Each node needs a NIC on the non-routed provisioning network, PXE-enabled
+#     and first in the boot order; PXE disabled on every other NIC.
+#   - bootMACAddress is the MAC of that provisioning NIC.
+#   - BMC addresses use ipmi:// or redfish:// (network boot). IPMI is not
+#     encrypted: Red Hat says to use it only on a secured, dedicated management
+#     network. Prefer redfish:// where the hardware supports it.
+#   - Red Hat: with a provisioning network, configure addressing through DHCP
+#     reservations (a fully static deployment requires virtual media). This
+#     example therefore has no networkConfig; reserve each node's machine-
+#     network address on the departmental DHCP server.
+# -----------------------------------------------------------------------------
+- name: openshift-master-0
+  role: master
+  bmc:
+    address: redfish://10.20.0.10/redfish/v1/Systems/1
+    disableCertificateVerification: false
+  bootMACAddress: "52:54:00:00:01:10"
+  bootMode: UEFI
+  rootDeviceHints:
+    deviceName: /dev/disk/by-path/pci-0000:00:17.0-ata-1
+- name: openshift-master-1
+  role: master
+  bmc:
+    address: redfish://10.20.0.11/redfish/v1/Systems/1
+    disableCertificateVerification: false
+  bootMACAddress: "52:54:00:00:01:11"
+  bootMode: UEFI
+  rootDeviceHints:
+    deviceName: /dev/disk/by-path/pci-0000:00:17.0-ata-1
+- name: openshift-master-2
+  role: master
+  bmc:
+    address: ipmi://10.20.0.12
+  bootMACAddress: "52:54:00:00:01:12"
+  bootMode: UEFI
+  rootDeviceHints:
+    deviceName: /dev/disk/by-path/pci-0000:00:17.0-ata-1
+- name: openshift-worker-0
+  role: worker
+  bmc:
+    address: redfish://10.20.0.20/redfish/v1/Systems/1
+    disableCertificateVerification: false
+  bootMACAddress: "52:54:00:00:01:20"
+  bootMode: UEFI
+  rootDeviceHints:
+    deviceName: /dev/disk/by-path/pci-0000:00:17.0-ata-1
+- name: openshift-worker-1
+  role: worker
+  bmc:
+    address: redfish://10.20.0.21/redfish/v1/Systems/1
+    disableCertificateVerification: false
+  bootMACAddress: "52:54:00:00:01:21"
+  bootMode: UEFI
+  rootDeviceHints:
+    deviceName: /dev/disk/by-path/pci-0000:00:17.0-ata-1
+- name: openshift-worker-2
+  role: worker
+  bmc:
+    address: redfish://10.20.0.22/redfish/v1/Systems/1
+    disableCertificateVerification: false
+  bootMACAddress: "52:54:00:00:01:22"
+  bootMode: UEFI
+  rootDeviceHints:
+    deviceName: /dev/disk/by-path/pci-0000:00:17.0-ata-1

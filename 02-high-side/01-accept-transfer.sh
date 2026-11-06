@@ -80,6 +80,7 @@ if [[ -d "${DEST}/tools" ]]; then
   client="$(find "${tdir}" -maxdepth 1 -name 'openshift-client-linux-*-rhel9-*.tar.gz' -print -quit)"
   [[ -n "${client}" ]] && tar -xzf "${client}" -C "${tdir}/bin" oc kubectl
   [[ -f "${tdir}/oc-mirror.rhel9.tar.gz" ]] && tar -xzf "${tdir}/oc-mirror.rhel9.tar.gz" -C "${tdir}/bin" oc-mirror
+  [[ -f "${tdir}/butane-${OCP_ARCH}" ]] && cp "${tdir}/butane-${OCP_ARCH}" "${tdir}/bin/butane"
   find "${tdir}/bin" -type f -exec chmod 0755 {} +
   log "tools for ${OCP_VER} unpacked into ${tdir}"
 fi

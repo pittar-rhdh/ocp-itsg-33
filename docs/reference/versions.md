@@ -34,6 +34,7 @@ version pins.
 | `OC_MIRROR_API_VERSION` | `ImageSetConfiguration` API version for `oc-mirror` v2 |
 | `MIRROR_ARCHIVE_SIZE_GB` | Maximum archive file size, to fit the transfer media |
 | `MIRROR_REGISTRY_VERSION` | mirror registry for Red Hat OpenShift release used on the high side |
+| `BUTANE_VERSION` | Butane release used to generate install-time MachineConfigs (Phase 3) |
 | `RHACS_VERSION` | `roxctl` and offline vulnerability data; must match the installed RHACS |
 | `OCP_OPERATOR_CATALOG`, `CERTIFIED_OPERATOR_CATALOG` | Source operator catalogs |
 | `OPERATORS` | Red Hat operator packages to mirror: pipe-separated package, channels, minimum version, and default channel |

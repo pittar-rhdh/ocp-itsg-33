@@ -63,6 +63,7 @@ The script downloads the tools for `OCP_MAX_VERSION` into `${MIRROR_BASE}/tools/
 | `oc`, `kubectl` | `openshift-client-linux-<arch>-rhel9-<version>.tar.gz` | Checksum list signed by Red Hat release key 2 (`199E2F91FD431D51`), checked with `gpgv` against `/etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release` |
 | `oc-mirror` (v2) | `oc-mirror.rhel9.tar.gz` from the same release | Same signed checksum list |
 | mirror registry | `mirror-registry-<arch>.tar.gz` (`MIRROR_REGISTRY_VERSION`) | Checksum list signed by Red Hat release key 2 |
+| `butane` | `openshift-v4/clients/butane/v<BUTANE_VERSION>/butane-<arch>` | **Unsigned** checksum list over TLS (same residual risk as `roxctl`) |
 | `roxctl` | RHACS assets for `RHACS_VERSION` | **Unsigned** checksum list over TLS. Record this as a residual risk, or obtain `roxctl` another way: Red Hat's RHACS documentation states that the main image (for example, `registry.redhat.io/advanced-cluster-security/rhacs-main-rhel9:<version>`) includes `roxctl`. |
 
 Use the **RHEL 9 builds** of `oc` and `oc-mirror`. Red Hat's oc-mirror prerequisites say to

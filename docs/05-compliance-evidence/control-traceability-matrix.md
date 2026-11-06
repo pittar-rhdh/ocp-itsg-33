@@ -134,7 +134,7 @@ selection against your departmental PBMM / Medium Cloud profile.
 | SC-13 | Use of Cryptography | RH/Plat | Part | FIPS mode, ITSP.40.111 algorithms | CO | [SC-13](../04-itsg33-configuration/controls/sc-system-and-communications-protection.md#sc-13-use-of-cryptography) |
 | SC-17 | PKI Certificates | Plat/Org | Full | Departmental PKI certificates for API and ingress | — | [SC-17](../04-itsg33-configuration/controls/sc-system-and-communications-protection.md#sc-12-cryptographic-key-establishment-and-management-sc-17-pki-certificates) |
 | SC-23 | Session Authenticity | Plat | Part | TLS-only tokens, secure cookies | — | [SC-23](../04-itsg33-configuration/controls/sc-system-and-communications-protection.md#sc-23-session-authenticity) |
-| SC-28 | Protection of Information at Rest | Plat/Inf | Part | etcd encryption, LUKS (TPM2/Tang), encrypted storage classes | CO | [SC-28](../04-itsg33-configuration/controls/sc-system-and-communications-protection.md#sc-28-protection-of-information-at-rest) |
+| SC-28 | Protection of Information at Rest | Plat/Inf | Part | etcd encryption, LUKS (TPM 2.0), encrypted storage classes | CO | [SC-28](../04-itsg33-configuration/controls/sc-system-and-communications-protection.md#sc-28-protection-of-information-at-rest) |
 | SC-39 | Process Isolation | RH/Plat | Full | Namespaces, SELinux, seccomp, user namespaces | CO | [SC-39](../04-itsg33-configuration/controls/sc-system-and-communications-protection.md#sc-39-process-isolation) |
 
 ## System and Information Integrity (SI)

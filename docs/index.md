@@ -1,7 +1,7 @@
 # OpenShift 4.22 on Bare Metal, Air-Gapped, for ITSG-33
 
-> **Status:** Draft v0.4 — Phase 0 (architecture), Phase 1 (content mirroring), Phase 2 (high-side
-> setup), and the ITSG-33 control guidance are written; the other phases are planned.
+> **Status:** Draft v0.5 — Phase 0 (architecture), Phases 1–3 (mirroring, high-side setup, cluster
+> install), and the ITSG-33 control guidance are written; the other phases are planned.
 
 > **Examples only — not validated.** Everything in this repository (scripts, configuration,
 > procedures) is an **example**. None of it has been run end to end against a real Red Hat
@@ -53,7 +53,7 @@ The reasons for each choice, and the alternatives, are in
 | **0 — Architecture** | — | Written | [Reference architecture](00-architecture/reference-architecture.md) |
 | **1 — Content mirroring** | Low side | Written (examples, not validated) | [Phase 1](01-mirroring/index.md) |
 | **2 — High-side setup** | High side | Written (examples, not validated) | [Phase 2](02-high-side/index.md) |
-| **3 — Bare-metal IPI install** | High side | Planned | [Phase 3](03-cluster-install/index.md) |
+| **3 — Bare-metal IPI install** | High side | Written (examples, not validated) | [Phase 3](03-cluster-install/index.md) |
 | **4 — ITSG-33 configuration as code** | High side | Control guidance available; GitOps planned | [Phase 4](04-itsg33-configuration/index.md) |
 | **5 — Compliance reporting and evidence** | High side | Guidance available; automation planned | [Phase 5](05-compliance-evidence/index.md) |
 | **6 — Standard operating procedures** | Both | Planned | [Phase 6](06-sops/index.md) |
@@ -95,7 +95,8 @@ versions.env                  Single source of truth for versions, operators, an
 lib/common.sh                 Helpers shared by the scripts of every phase
 01-mirror/                    Phase 1 scripts, generated imageset-config.yaml, transfer record template
 02-high-side/                 Phase 2 scripts (accept, registry install/hardening/access, import, installer)
-03-install/ .. 05-evidence/   Configuration and scripts for later phases (added as they are built)
+03-install/                   Phase 3 templates, host inventory examples, install-time manifests, scripts
+04-gitops/ .. 05-evidence/    Configuration and scripts for later phases (added as they are built)
 ```
 
 See [Versions and pinned content](reference/versions.md) for how `versions.env` is used.

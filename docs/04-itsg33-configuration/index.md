@@ -39,6 +39,9 @@ server, so that the Git history and Argo CD sync history are configuration-manag
 
 Notes gathered so far for this phase:
 
+- Remove `kubeadmin` (`oc delete secret kubeadmin -n kube-system`) once the identity provider and
+  a cluster-admin group work, and take ownership through GitOps of the Day-1 settings that
+  Phase 3 applied (OperatorHub sources, catalog sources, etcd encryption, audit profile).
 - RHACS **offline mode can only be enabled at installation**, not during an upgrade (RHACS
   documentation, "Enabling offline mode"). With the Operator, set
   `spec.egress.connectivityPolicy: Offline` on the `Central` resource when it is first created.

@@ -38,5 +38,9 @@ mirror_seq*.tar
 .openshift_install*
 *.ign
 
+# Phase 3 inventories and credentials if kept next to the repository
+hosts.yaml
+bmc-credentials.env
+
 # Evidence bundles (Protected B once populated; store in an approved repository)
 evidence/

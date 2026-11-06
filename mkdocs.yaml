@@ -28,6 +28,10 @@ nav:
       - Populate the Registry: 02-high-side/populate-registry.md
   - 3 - Cluster Install:
       - Overview: 03-cluster-install/index.md
+      - Prerequisites and Provisioner Host: 03-cluster-install/prerequisites.md
+      - install-config.yaml: 03-cluster-install/install-config.md
+      - Install-Time Security Settings: 03-cluster-install/install-time-security.md
+      - Run and Verify the Install: 03-cluster-install/run-install.md
   - 4 - ITSG-33 Configuration:
       - Overview: 04-itsg33-configuration/index.md
       - Control Families:

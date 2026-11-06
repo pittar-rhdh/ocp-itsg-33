@@ -22,7 +22,7 @@ choice, the rationale, and the approver.
 | AD-03 | Authentication model | Built-in OAuth server with an OIDC identity provider | Department | Direct authentication with an external OIDC provider | IA-2, IA-5, AC-2 |
 | AD-04 | Cluster tenancy and management plane | Single HA cluster (3 control plane + 3..N workers); ACM and RHACS run on the same cluster | Decided | Separate management (hub) cluster; one cluster per security domain | SC-2, SC-3, CA-7 |
 | AD-05 | East-west encryption | OVN-Kubernetes IPsec `Full`, enabled at install time | Default | IPsec `External`; none (with TRA justification) | SC-8, SC-13 |
-| AD-06 | Disk encryption key source | LUKS bound to TPM2 | Default | Tang (NBDE); TPM2 and Tang together | SC-28, SC-12 |
+| AD-06 | Disk encryption key source | LUKS bound to TPM 2.0 | Decided | Tang (NBDE), alone or with TPM 2.0, is supported only for UPI installs in 4.22, so it is not an option for this IPI design | SC-28, SC-12 |
 | AD-07 | Log destination and retention | Departmental SIEM, plus LokiStack for short-term search | Department | SIEM only | AU-4, AU-9, AU-11 |
 | AD-08 | Telemetry and remote health reporting | Disabled (no path to Red Hat from the high side) | Decided | — | SA-9 |
 | AD-09 | Network isolation model (per zone or tenant) | Tier 1 policy isolation by default; tier 2 CUDN per zone where the TRA requires it | Department | Tier 3 separate cluster; BGP route advertisement (VRF-lite / EVPN) | AC-4, SC-7 |
@@ -32,7 +32,7 @@ choice, the rationale, and the approver.
 | AD-13 | Persistent storage | Existing enterprise storage through the vendor's CSI driver (NFS acceptable for general RWX only) | Decided | OpenShift Data Foundation; LVM Storage | CP-9, SC-28 |
 | AD-14 | Object storage | Existing departmental S3-compatible endpoint for LokiStack and OADP | Department | No object storage: SIEM-only logging and backups to another target | AU-11, CP-9 |
 | AD-15 | Content transfer method | Removable media or one-way transfer; SHA-256 manifest signed with a dedicated transfer GPG key whose public key reaches the high side out of band; chain-of-custody record | Department | Cross-domain solution (CDS) | MP-2, MP-5, SA-12, SI-7 |
-| AD-16 | API and ingress load balancing | Platform-managed VIPs (keepalived / HAProxy) | Default | Departmental external load balancer (user-managed); check 4.22 support for your topology | SC-5, SC-7 |
+| AD-16 | API and ingress load balancing | Platform-managed VIPs (keepalived / HAProxy) | Default | Departmental load balancer (`loadBalancer.type: UserManaged`, documented for 4.22 bare-metal IPI; it must be on the same L2 network and VLAN as the control plane nodes) | SC-5, SC-7 |
 | AD-17 | Platform services placement | Infra role on the first three workers | Default | Dedicated infra nodes | SC-2, SC-3 |
 | AD-18 | Registry host and provisioner host | Two separate RHEL 9 FIPS hosts | Default | One combined host (lab only) | CM-7, SC-2 |
 | AD-19 | Update path | OpenShift Update Service on the cluster, fed by mirrored graph data; EUS-to-EUS for y-stream upgrades | Default | Manual upgrades to an explicit release digest | SI-2, CM-3 |

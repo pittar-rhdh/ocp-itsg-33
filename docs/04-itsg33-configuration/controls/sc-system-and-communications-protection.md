@@ -583,8 +583,10 @@ oc debug node/<node> -- chroot /host update-crypto-policies --show         # Exp
   resources stored in etcd. Turn it on right after installation. Where your key management policy
   requires an external KMS / HSM, check whether 4.22 supports an external KMS provider on your
   platform. See "External encryption key management" in the 4.22 docs.
-- **Node disk encryption:** turn on LUKS for the RHCOS root disk at installation, bound to **TPM2**
-  and/or **Tang** (NBDE) servers in the MRZ.
+- **Node disk encryption:** turn on LUKS for the RHCOS root disk at installation, bound to the
+  node's **TPM 2.0**. Red Hat's 4.22 documentation states that Tang (NBDE) mode is supported only
+  for bare-metal and vSphere installations on **user-provisioned** infrastructure, so this
+  design (bare-metal IPI) uses TPM 2.0 only. See [Phase 3](../../03-cluster-install/install-time-security.md).
 - **Persistent volumes:** use encrypted storage classes. In this reference design, storage comes
   from enterprise storage through the vendor CSI driver (AD-13): turn on array-level encryption
   at rest, or CSI driver volume encryption with keys held in the departmental KMS.
@@ -602,28 +604,26 @@ spec:
     type: aesgcm
 ```
 
-**Configuration example — RHCOS disk encryption with TPM2 and Tang (Butane, applied at installation):**
+**Configuration example — RHCOS disk encryption with TPM 2.0 (Butane, applied at installation):**
 
 ```yaml
 variant: openshift
-version: 4.22.0                         # Use the Butane spec version that matches your cluster
+version: 4.22.0
 metadata:
-  name: worker-storage
+  name: 99-worker-disk-encryption
   labels:
     machineconfiguration.openshift.io/role: worker
 boot_device:
   layout: x86_64
   luks:
     tpm2: true
-    tang:
-      - url: http://tang1.mrz.example.gc.ca:7500
-        thumbprint: <tang-thumbprint>
-      - url: http://tang2.mrz.example.gc.ca:7500
-        thumbprint: <tang-thumbprint>
-    threshold: 2                        # Any 2 of the 3 pins (TPM2 + a Tang server, or both Tang servers)
 openshift:
-  fips: true
+  fips: true                            # required in the Butane config when the cluster is FIPS
 ```
+
+The repository version of this file is `03-install/manifests/99-ROLE-disk-encryption.bu.tmpl`.
+Tang servers, alone or combined with TPM 2.0 through a `threshold`, apply only to UPI
+installations in 4.22.
 
 > Disk encryption must be set at installation. Generate the manifests with
 > `openshift-install create manifests` and add the compiled MachineConfigs for both the `master` and

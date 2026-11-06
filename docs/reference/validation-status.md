@@ -31,6 +31,12 @@ Hat pull secret), in November 2026.
 | `02-high-side/06-disk-to-mirror.sh` | Real `oc-mirror --v2` disk-to-mirror into a TLS registry (`registry:2`), two ordered imports, cluster resources captured | The mirror registry (Quay); release and operator content; signature and catalog resources |
 | `02-high-side/07-extract-installer.sh` | Against a **stub** `oc` (logic and checks only) | Real extraction of `openshift-install-fips` |
 | `02-high-side/08-publish-repo.sh` | Against local bare Git repositories, including the divergence refusal | A real departmental Git server |
+| `03-install/01-check-provisioner.sh` | Ran in the container (host checks fail as expected there); hand-off checks (installer checksum, pinned release, pull secret contents) against stub inputs | A real RHEL 9 FIPS provisioner with libvirt and bridges |
+| `03-install/02-validate-environment.sh` | DNS, PTR, registry, and release checks against stubbed `dig` and `oc`; Redfish checks against a **mock** HTTPS Redfish endpoint (good and bad credentials, untrusted certificate) | Real DNS, real BMCs, IPMI |
+| `03-install/03-render-install-config.sh` | Rendering for virtual media and PXE inventories, credentials with special characters, static bootstrap and BMC CA options, and the negative checks (ed25519 key, VIP outside the machine network, wrong BMC driver, `disableCertificateVerification: true`, missing credentials, reused directory); output parsed with PyYAML | Acceptance by the real `openshift-install-fips` (the installer was a **stub**); `nmstatectl gc` (not installed in the container) |
+| `03-install/04-create-manifests.sh` | Real **Butane 0.29** conversion of the chrony and TPM 2.0 disk-encryption configs (`variant: openshift`, `version: 4.22.0`) and the IPsec manifest, with a **stub** installer | Real `create manifests`; whether the cluster accepts the IPsec manifest at install time |
+| `03-install/05-install-cluster.sh` | **Not run** (needs hardware) | Everything |
+| `03-install/06-post-install.sh` | Verification and `--configure` logic against a **stub** `oc` with canned responses (healthy and failing cases) | A real cluster |
 | Documentation | Strict MkDocs build; link and anchor check | Review by Red Hat, CCCS, or an assessor |
 
 ## Sources
@@ -51,12 +57,19 @@ checked against **docs.redhat.com** through the Red Hat documentation search too
 | Logging and Loki operator channels | Red Hat OpenShift Logging 6.x *Upgrade* |
 | RHACS offline mode and vulnerability definitions | Red Hat Advanced Cluster Security for Kubernetes 4.11 *Configuring*, "Enabling offline mode" |
 | Quay TLS, `SSL_PROTOCOLS`, API (robots, teams, default permissions) | Red Hat Quay 3.x *Securing Red Hat Quay*, *Use Red Hat Quay*, *Managing access and permissions* |
+| Bare-metal IPI: prerequisites, networks, ports, DNS, provisioner preparation, `install-config.yaml` parameters, BMC addressing, root device hints, no provisioning network, host network interfaces, user-managed load balancer | OpenShift 4.22 *Installing on bare metal*, chapter 3 (sections 3.2 and 3.3) |
+| Boot disk encryption (TPM v2 and Tang, Tang UPI-only, LUKS2 AES-256-XTS, Butane example) | OpenShift 4.22 *Installation configuration*, chapter 1.7 |
+| `install-config.yaml` common parameters (`additionalTrustBundlePolicy`, `capabilities`, `fips`, FIPS host requirement, SSH key types in FIPS mode) | OpenShift 4.22 *Installing on Nutanix*, chapters 4 and 7 (shared parameter tables; used because the bare-metal chapter was truncated by the search tool) |
 
 Where documentation was silent, details were taken from **upstream source code** and are marked
 as such where they matter: the `quay/mirror-registry` installer (flag defaults, `config.yaml`
 template, systemd units), `openshift/oc` (`openshift-install-fips` and
 `openshift-baremetal-install` map to the same binary), `openshift/oc-mirror` (generated file
-names), and `stackrox/stackrox` (`roxctl scanner download-db --version --skip-central`). Upstream
+names), `stackrox/stackrox` (`roxctl scanner download-db --version --skip-central`),
+`openshift/installer` release-4.22 (`imageDigestSources` replaces the deprecated
+`imageContentSources`; `bmcVerifyCA`; optional `clusterProvisioningIP`/`bootstrapProvisioningIP`),
+and `openshift/api` release-4.22 (`ipsecConfig.mode` values, APIServer encryption types and audit
+profiles, `disableAllDefaultSources`). Upstream
 behaviour can change without notice.
 
 Several operator package names in `versions.env` were not found in Red Hat documentation; see

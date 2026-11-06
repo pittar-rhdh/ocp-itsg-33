@@ -135,4 +135,6 @@ example, cluster overlays that reference high-side names) go on a separate branc
 | Mirror configuration for `install-config.yaml` | `/data/ocp/cluster-resources/current/idms-oc-mirror.yaml` |
 | Pull secret for `install-config.yaml` | `CLUSTER_PULL_SECRET_FILE` (pull-only robot) |
 | Trust bundle for `install-config.yaml` | `TLS_CA_BUNDLE` |
+| Cluster resources for Day 1 (catalogs, ITMS, signatures) | `/data/ocp/cluster-resources/current/` |
+| `oc` and `butane` | `/data/ocp/tools/<version>/bin/` |
 | Configuration repository | Departmental Git, tag `transfer/<ID>` |

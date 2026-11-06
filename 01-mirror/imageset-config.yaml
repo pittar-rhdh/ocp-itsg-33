@@ -61,3 +61,4 @@ mirror:
     - name: registry.redhat.io/rhel9/support-tools:latest   # oc debug / toolbox on RHCOS
     - name: registry.redhat.io/ubi9/ubi:latest
     - name: registry.redhat.io/ubi9/ubi-minimal:latest
+    - name: registry.redhat.io/compliance/oc-compliance-rhel8:stable   # oc-compliance plugin (Phase 5 raw results)

@@ -31,18 +31,20 @@ record it in the SSP.
 4. Run `oc-mirror --v2` mirror-to-disk. It's incremental: only new content is archived.
 5. If the RHACS version changed, download the matching `roxctl` and vulnerability data.
 6. Package, sign, verify, and transfer.
-7. On the high side, import (Phase 2) and upgrade (Phase 6 SOPs).
+7. On the high side, import ([Content import](../06-sops/content-import.md)) and upgrade
+   ([Upgrades](../06-sops/upgrades.md)).
 8. After the upgrade, raise the platform `minVersion` to the new installed version in the next
    import.
 
 Old content isn't deleted from the mirror registry by an import. Pruning uses the delete
-configuration (`disc_pinned_*.yaml`) and is covered in the Phase 6 SOPs.
+configuration (`disc_pinned_*.yaml`) and the oc-mirror v2 delete workflow; it is not yet covered
+by an SOP (see the [backlog](../reference/backlog.md)).
 
 ## Y-stream upgrades
 
 Moving to the next minor release (for example, 4.22 to 4.24 through an EUS-to-EUS path) needs
 more than one platform channel in the ISC and different tool versions. Y-stream imports are
-covered with the upgrade SOPs in Phase 6.
+covered in the [Control Plane Only (EUS-to-EUS) upgrade](../06-sops/upgrades.md#control-plane-only-eus-to-eus-upgrade) SOP.
 
 ## Keeping the low side healthy
 

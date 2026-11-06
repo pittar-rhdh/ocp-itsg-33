@@ -56,9 +56,21 @@ nav:
   - 5 - Compliance and Evidence:
       - Overview: 05-compliance-evidence/index.md
       - Compliance Automation and Evidence: 05-compliance-evidence/compliance-automation-and-evidence.md
+      - Scan Review and Remediation: 05-compliance-evidence/scan-review-and-remediation.md
+      - Reporting: 05-compliance-evidence/reporting.md
+      - Evidence Collection: 05-compliance-evidence/evidence-collection.md
       - Control Traceability Matrix: 05-compliance-evidence/control-traceability-matrix.md
   - 6 - Standard Operating Procedures:
       - Overview: 06-sops/index.md
+      - Deployment Checklist: 06-sops/deployment-checklist.md
+      - Content Import: 06-sops/content-import.md
+      - Upgrades: 06-sops/upgrades.md
+      - Certificate Rotation: 06-sops/certificate-rotation.md
+      - Backup and Restore: 06-sops/backup-and-restore.md
+      - Access Management: 06-sops/access-management.md
+      - Security Operations: 06-sops/security-operations.md
+      - Node Management: 06-sops/node-management.md
+      - Troubleshooting: 06-sops/troubleshooting.md
   - Reference:
       - Versions and Pinned Content: reference/versions.md
       - Validation Status and Sources: reference/validation-status.md

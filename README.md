@@ -30,6 +30,7 @@ files that show what the configuration should look like:
 | [`01-mirror/`](01-mirror/) | `ImageSetConfiguration` for oc-mirror v2, signature policy, transfer record template |
 | [`03-install/`](03-install/) | `install-config.yaml` for bare-metal IPI (virtual media, PXE excerpt), Butane and network manifests |
 | [`04-gitops/`](04-gitops/) | GitOps repository: bootstrap, Kustomize components, cluster overlay, ACM policies |
+| [`05-evidence/`](05-evidence/) | Evidence bundle index template, example SRTM and POA&M rows |
 
 Versions are recorded in [docs/reference/versions.md](docs/reference/versions.md).
 

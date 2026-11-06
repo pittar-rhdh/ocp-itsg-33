@@ -223,7 +223,7 @@ Regenerate a robot token (UI: robot account → **Regenerate token**, or
 credential file with `podman login` as above.
 
 Rotating `cluster_pull` invalidates the cluster's pull secret. Update the cluster's global pull
-secret immediately afterwards (Phase 6 SOP). Rotate on the departmental schedule, and whenever
+secret immediately afterwards ([Registry robot token rotation](../06-sops/access-management.md#registry-robot-token-rotation)). Rotate on the departmental schedule, and whenever
 someone with access to the files leaves (IA-5).
 
 ## Certificate rotation
@@ -240,7 +240,7 @@ systemctl --user restart quay-app
 ```
 
 Then repeat the verification commands from [Hardening](#hardening). If the **issuing CA** changes,
-update the cluster's trust bundle **before** rotating (Phase 6 SOP), or nodes will stop pulling.
+update the cluster's trust bundle **before** rotating ([Certificate rotation](../06-sops/certificate-rotation.md#update-the-cluster-trust-bundle)), or nodes will stop pulling.
 
 ## Upgrades
 

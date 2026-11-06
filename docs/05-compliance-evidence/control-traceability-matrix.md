@@ -1,10 +1,53 @@
 # Control Traceability Matrix
 
-[← Back to main](../index.md)
+[← Phase 5 overview](index.md)
+
+> **Examples only — not validated.** See [Validation status](../reference/validation-status.md).
 
 This matrix summarizes, for each control, how the reference architecture meets it. Use it as the
 starting point for the platform **Security Requirements Traceability Matrix (SRTM)**. Check control
 selection against your departmental PBMM / Medium Cloud profile.
+
+## Evidence locations and frequency
+
+Where the evidence for each control is in the [evidence bundle](evidence-collection.md#bundle-layout),
+and how often it is produced. Use it to fill the evidence columns of the SRTM.
+
+| Bundle folder / source | Controls | Produced | Collected into the bundle |
+|---|---|---|---|
+| `00-metadata/` — ClusterVersion, CSVs, content versions, repository commit | CM-8, SA-22 | On change | Quarterly |
+| `01-compliance-operator/` — per-rule results with controls, tailoring, remediations | CA-2, CA-7, CM-6, SI-6; every control in the rule annotations (for example AC-2, AC-8, AC-12, AU-2, AU-9, IA-5, SC-8, SC-13, SC-28) | Daily, 01:00 | Quarterly; monthly summary |
+| `01-compliance-operator/manual-assessments/` — `MANUAL` checks | Controls of each manual rule | When assessed | Quarterly |
+| `02-raw-arf/` — raw ARF results | CA-2, CA-2(1) | Daily (90 kept on the cluster) | Quarterly; before authorization |
+| `03-acm-governance/` — policy status and history | CA-7, CM-6; AC-6, AC-8, IA-2, AU-2, AU-4, SC-28, CM-7, SI-7, RA-5 (one policy each) | Continuous | Monthly export; quarterly |
+| `04-rhacs/` — vulnerability report, data import record | RA-5, RA-5(2), SI-2, SI-4, SI-5 | Continuous; data import at least daily | Monthly report; quarterly |
+| `05-configuration/` — platform configuration exports | CM-2, CM-6, AC-4, AC-8, AC-12, SC-7, SC-8, SC-13, SC-28 | On change | Quarterly |
+| `06-access/` — bindings, groups, SCC use | AC-2, AC-3, AC-5, AC-6, AC-14 | On change | Quarterly |
+| `07-logging/` — forwarding, audit profile, SIEM receipt | AU-2, AU-4, AU-9, AU-12 | Continuous | Quarterly |
+| `08-integrity/` — AIDE results and failure logs | SI-7, SI-7(1) | Every 15 minutes (`gracePeriod: 900`) | Quarterly; failures weekly |
+| `09-backup/` — OADP schedules and backups, restore test | CP-9, CP-10, CP-4 | Daily backups; restore test per CP plan | Quarterly |
+| `10-change/` — Argo CD history, Git log, install plans, ClusterVersion history, tickets | CM-3, CM-4, CM-5, SI-2 | On change | Quarterly |
+| `11-poam/` — POA&M extract | CA-5 | Weekly review | Monthly; quarterly |
+| Documents outside the bundle — SSP, IR plan, CP plan, TRA, assessment report | PL-2, IR-8, CP-2, RA-3, CA-2 | Per departmental process | Referenced by name and version in the bundle index |
+
+### Building the departmental SRTM
+
+`05-evidence/srtm-example.csv` shows the target format with representative rows. To build the
+SRTM for `ocp1`:
+
+1. Start from the departmental SRTM template and the control list of your PBMM / Medium Cloud
+   profile. Keep its control IDs and wording.
+2. For each control, copy responsibility, inheritance, and implementation from the family tables
+   below and the [control family guides](../04-itsg33-configuration/controls/index.md).
+3. **Configuration:** the `04-gitops/` path of the component that implements it (the
+   `itsg33/controls` annotation on each object lists its controls).
+4. **Automated check:** the ACM policy name, and the Compliance Operator rules that carry the
+   control, from the rule-to-control map
+   ([Map rules to ITSG-33 controls](compliance-automation-and-evidence.md#map-rules-to-itsg-33-controls)).
+5. **Evidence artifact and frequency:** the bundle path and frequency from the table above.
+6. **Owner and status:** a named role, and the status from the latest bundle (`Implemented`,
+   `Partially implemented`, `Planned`, `Inherited`), with the POA&M ID when not fully implemented.
+7. Review the SRTM with every bundle; the assessor checks each row against the bundle it names.
 
 **Legend**
 

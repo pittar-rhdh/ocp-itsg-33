@@ -125,4 +125,5 @@ detail, not documented ones). Copy them into the transfer's `config/` directory 
 [Packaging and transfer](packaging-and-transfer.md#package-layout)). They record which catalog
 digests a transfer was built from (CM-8, SA-12); the full list of images is in the oc-mirror log,
 which is also in the package. The delete configuration is a starting point for pruning old
-content from the mirror registry later (Phase 6).
+content from the mirror registry later (not yet covered by an SOP; see the
+[backlog](../reference/backlog.md)).

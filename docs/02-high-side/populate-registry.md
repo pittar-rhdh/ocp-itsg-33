@@ -75,7 +75,7 @@ image set, not only the delta:
 | `cs-redhat-operator-index-*.yaml` | `CatalogSource` (OLM classic) | Phase 4 (replaces the default sources) |
 | `cc-redhat-operator-index-*.yaml` | `ClusterCatalog` (OLM v1) | Phase 4, if OLM v1 is used |
 | `signature-configmap.json` / `.yaml` | `ConfigMap` `mirrored-release-signatures` in `openshift-config-managed` | Day 2, so the cluster can verify release signatures for upgrades |
-| `updateService.yaml` | `UpdateService` | Phase 6 (OpenShift Update Service) |
+| `updateService.yaml` | `UpdateService` | [OpenShift Update Service setup](../06-sops/upgrades.md#one-time-setup-openshift-update-service) |
 
 Red Hat documents fields in these resources that **must not be changed**: `spec.image` in a
 `CatalogSource`, `spec.source.image.ref` in a `ClusterCatalog`, `spec.imageDigestMirrors` /

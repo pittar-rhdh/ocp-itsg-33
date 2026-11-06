@@ -33,4 +33,6 @@ catalog, `rhods-operator`) to `01-mirror/imageset-config.yaml` and record them i
 | OpenShift Virtualization | Out of scope for now |
 | Service mesh specifics | Out of scope for now |
 | Second site / disaster recovery cluster | Single-site rebuild is covered; active/standby across sites is not |
+| Mirror registry pruning | SOP for removing old releases and operator bundles with the oc-mirror v2 delete workflow (`disc_pinned_*.yaml` delete configuration), with registry garbage collection and records |
+| Infra node placement (AD-17) | MachineConfigPool, node labels and taints, and component placement in `04-gitops/` |
 | Hub-and-spoke (multiple clusters) | See [Scaling out](../00-architecture/reference-architecture.md#scaling-out) |

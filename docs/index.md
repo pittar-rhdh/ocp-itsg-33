@@ -1,7 +1,6 @@
 # OpenShift 4.22 on Bare Metal, Air-Gapped, for ITSG-33
 
-> **Status:** Draft v0.6 — Phases 0–4 (architecture, mirroring, high-side setup, cluster install,
-> ITSG-33 configuration as code) are written; Phases 5 and 6 are in progress.
+> **Status:** Draft v0.7 — all phases (0–6) are written as examples, not validated.
 
 > **Examples only — not validated.** Everything in this repository (example files, commands,
 > procedures) is an **example**. None of it has been run end to end against a real Red Hat
@@ -55,8 +54,8 @@ The reasons for each choice, and the alternatives, are in
 | **2 — High-side setup** | High side | Written (examples, not validated) | [Phase 2](02-high-side/index.md) |
 | **3 — Bare-metal IPI install** | High side | Written (examples, not validated) | [Phase 3](03-cluster-install/index.md) |
 | **4 — ITSG-33 configuration as code** | High side | Written (examples, not validated) | [Phase 4](04-itsg33-configuration/index.md) |
-| **5 — Compliance reporting and evidence** | High side | Guidance available; automation planned | [Phase 5](05-compliance-evidence/index.md) |
-| **6 — Standard operating procedures** | Both | Planned | [Phase 6](06-sops/index.md) |
+| **5 — Compliance reporting and evidence** | High side | Written (examples, not validated) | [Phase 5](05-compliance-evidence/index.md) |
+| **6 — Standard operating procedures** | Both | Written (examples, not validated) | [Phase 6](06-sops/index.md) |
 
 Each phase page lists its **inputs**, **outputs**, the **architecture decisions** it depends on,
 and the **ITSG-33 controls** it supports, so each phase hands off cleanly to the next.
@@ -94,6 +93,7 @@ docs/                         Documentation (published with TechDocs / MkDocs)
 01-mirror/                    Example ImageSetConfiguration, signature policy, transfer record template
 03-install/                   Example install-config.yaml (virtual media, PXE excerpt) and install-time manifests
 04-gitops/                    Example GitOps repository: bootstrap, components, cluster overlay, ACM policies
+05-evidence/                  Example evidence bundle index, SRTM rows, and POA&M rows
 ```
 
 This repository is a reference, not an automation tool. It contains no scripts: the docs show

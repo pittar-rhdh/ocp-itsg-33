@@ -93,7 +93,7 @@ departmental vault (see [Credentials](#credentials)).
 | Certificate errors to BMCs | `bmcVerifyCA` must contain the CA that signed the BMC certificates |
 
 A failed install leaves wiped disks and a used installation directory: start again from a new
-directory after fixing the cause. Phase 6 has the full troubleshooting SOP.
+directory after fixing the cause. See also [Troubleshooting](../06-sops/troubleshooting.md).
 
 ## Day-1 settings
 
@@ -109,7 +109,7 @@ oc whoami                                    # system:admin
 oc patch operatorhub cluster --type merge -p '{"spec":{"disableAllDefaultSources":true}}'
 
 # CM-11, SI-7: mirrored catalogs, ITMS, and release signatures from oc-mirror.
-# Skip updateService.yaml: its CRD needs the OpenShift Update Service operator (Phase 6).
+# Skip updateService.yaml: its CRD needs the OpenShift Update Service operator (Phase 4/6).
 cd ~/ocp-install/inputs/cluster-resources
 for f in *.yaml; do
   [ "${f}" = updateService.yaml ] && continue
@@ -169,7 +169,7 @@ Keep the whole evidence directory (it is Protected B once populated) with the ch
 |---|---|
 | `auth/kubeconfig` (system:admin) | Break-glass. Seal in the departmental vault immediately; remove from the provisioner once the identity provider works (AC-2, AC-6(9)). |
 | `auth/kubeadmin-password` | Keep sealed until an identity provider and a cluster-admin group work. It is removed in Phase 4: after an IdP administrator can log in, `oc delete secret kubeadmin -n kube-system`. |
-| BMC passwords | Rotate on every BMC after installation and update the `BareMetalHost` secrets in `openshift-machine-api` (Phase 6 SOP); delete the install-config working copy `~/ocp-install/install-config.ocp1.yaml` (IA-5). |
+| BMC passwords | Rotate on every BMC after installation and update the `BareMetalHost` secrets in `openshift-machine-api` ([BMC credential rotation](../06-sops/node-management.md#bmc-credential-rotation)); delete the install-config working copy `~/ocp-install/install-config.ocp1.yaml` (IA-5). |
 | `kni` sudo rule | Remove it (or decommission the provisioner) after installation (AC-6). |
 | SSH key for `core` | Keep the private key in the vault; node SSH access is for break-glass only (AC-17). |
 

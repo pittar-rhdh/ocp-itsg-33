@@ -12,18 +12,24 @@ produces are usable as evidence.
 
 ## SOP format
 
-Every SOP uses the same sections:
+Every SOP starts with a summary table, followed by the steps:
 
-| Section | Content |
+```markdown
+## <SOP name>
+
+| | |
 |---|---|
-| **Purpose and scope** | What the procedure does and when to use it |
-| **Roles** | Who performs, who approves, who is informed |
-| **Prerequisites** | Access, tools, approvals, and the state the system must be in |
-| **Procedure** | Numbered steps with exact commands |
-| **Verification** | How to confirm success |
-| **Rollback** | How to undo or recover |
-| **Records and evidence** | What to keep, and where |
-| **Related controls** | The ITSG-33 controls the procedure supports |
+| **Purpose** | What the procedure does |
+| **When** | Trigger or frequency |
+| **Roles** | Who performs, who approves |
+| **Prerequisites** | Access, approvals, and the state the system must be in |
+| **Controls** | The ITSG-33 controls the procedure supports |
+
+### Procedure        numbered steps with exact commands
+### Verification     how to confirm success
+### Rollback         how to undo or recover
+### Records          what to keep as evidence, and where
+```
 
 | | |
 |---|---|

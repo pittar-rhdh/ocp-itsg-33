@@ -2,7 +2,7 @@
 
 [← Back to main](../index.md)
 
-> **Everything in this repository is an example.** The scripts, configuration files, and
+> **Everything in this repository is an example.** The example files, commands, and
 > procedures show one way to build the platform. **None of them has been run end to end against a
 > real Red Hat subscription, a real air-gapped environment, real bare-metal hardware, or a real
 > OpenShift cluster.** Review, adapt, and test every part in a non-production environment, and
@@ -12,38 +12,20 @@
 
 ## What was and wasn't tested
 
-Testing was done in a development container (RHEL 9 userspace, no FIPS mode, no systemd, no Red
-Hat pull secret), in November 2026.
+This repository contains **no scripts**. It contains example configuration files and, in the
+docs, example commands. Checks were done in a development container (RHEL 9 userspace, no FIPS
+mode, no systemd, no Red Hat pull secret), in November 2026.
 
-| Component | What was exercised | What was **not** tested |
+| Item | What was checked | What was **not** checked |
 |---|---|---|
-| `01-mirror/01-download-tools.sh` | Real downloads of `oc`, `oc-mirror` (4.22.18), mirror registry 2.0.9, and `roxctl` 4.11.7 from mirror.openshift.com, including Red Hat GPG verification of the checksum lists | Running on a FIPS-mode host |
-| `01-mirror/02-check-workstation.sh` | Ran; checks reported as expected for the container | A real RHEL 9 FIPS workstation |
-| `01-mirror/04-render-imageset-config.sh` | Rendering, `--check`, input validation; the generated file was accepted by the real `oc-mirror` 4.22 | Mirroring the rendered content (needs a pull secret) |
-| `01-mirror/05-mirror-to-disk.sh` | Real `oc-mirror --v2` mirror-to-disk with small public UBI images, including incremental runs | Release and operator catalogs (needs a pull secret); signature verification (`MIRROR_VERIFY_SIGNATURES`) |
-| `01-mirror/06-download-rhacs-db.sh` | Real download of the RHACS 4.11.7 offline vulnerability data | Import into RHACS Central |
-| `01-mirror/07-package-transfer.sh`, `08-verify-transfer.sh` | Packaging, signing with a throwaway GPG key, ordering chain; verification rejected a modified archive, an added file, an edited `SHA256SUMS`, a wrong key, and a missing signature | Real removable media or a cross-domain solution |
-| `02-high-side/01-accept-transfer.sh` | Acceptance, ordering refusals, ledger, tool unpacking | — |
-| `02-high-side/02-check-registry-host.sh` | Certificate checks against a test CA with good and bad certificates; the host checks ran (and correctly failed in the container) | A real hardened RHEL 9 FIPS registry host |
-| `02-high-side/03-install-mirror-registry.sh` | **Not run.** The mirror registry installer couldn't run in the container. Flags were checked against the Red Hat 4.22 documentation and the upstream `quay/mirror-registry` source | Everything |
-| `02-high-side/04-harden-mirror-registry.sh` | Configuration editing against the upstream mirror registry `config.yaml` template; health, anonymous-access, and TLS checks against a mock HTTPS server | A real mirror registry (whether Quay accepts the settings and restarts cleanly) |
-| `02-high-side/05-configure-registry-access.sh` | Against a **mock** of the Red Hat Quay API written from the Quay API documentation | A real mirror registry |
-| `02-high-side/06-disk-to-mirror.sh` | Real `oc-mirror --v2` disk-to-mirror into a TLS registry (`registry:2`), two ordered imports, cluster resources captured | The mirror registry (Quay); release and operator content; signature and catalog resources |
-| `02-high-side/07-extract-installer.sh` | Against a **stub** `oc` (logic and checks only) | Real extraction of `openshift-install-fips` |
-| `02-high-side/08-publish-repo.sh` | Against local bare Git repositories, including the divergence refusal | A real departmental Git server |
-| `03-install/01-check-provisioner.sh` | Ran in the container (host checks fail as expected there); hand-off checks (installer checksum, pinned release, pull secret contents) against stub inputs | A real RHEL 9 FIPS provisioner with libvirt and bridges |
-| `03-install/02-validate-environment.sh` | DNS, PTR, registry, and release checks against stubbed `dig` and `oc`; Redfish checks against a **mock** HTTPS Redfish endpoint (good and bad credentials, untrusted certificate) | Real DNS, real BMCs, IPMI |
-| `03-install/03-render-install-config.sh` | Rendering for virtual media and PXE inventories, credentials with special characters, static bootstrap and BMC CA options, and the negative checks (ed25519 key, VIP outside the machine network, wrong BMC driver, `disableCertificateVerification: true`, missing credentials, reused directory); output parsed with PyYAML | Acceptance by the real `openshift-install-fips` (the installer was a **stub**); `nmstatectl gc` (not installed in the container) |
-| `03-install/04-create-manifests.sh` | Real **Butane 0.29** conversion of the chrony and TPM 2.0 disk-encryption configs (`variant: openshift`, `version: 4.22.0`) and the IPsec manifest, with a **stub** installer | Real `create manifests`; whether the cluster accepts the IPsec manifest at install time |
-| `03-install/05-install-cluster.sh` | **Not run** (needs hardware) | Everything |
-| `03-install/06-post-install.sh` | Verification and `--configure` logic against a **stub** `oc` with canned responses (healthy and failing cases) | A real cluster |
-| `04-gitops/` manifests (bootstrap, components, overlay `ocp1`, ACM policies) | Rendered with kustomize v5.4.2 (`oc kustomize`); **kubeconform `-strict`** against the Kubernetes schemas plus JSON schemas generated from the **upstream CRDs** (openshift/api, argocd-operator, cluster-logging-operator, Loki operator, stackrox release-4.11, compliance-operator, file-integrity-operator, multiclusterhub-operator, governance-policy-propagator, oadp-operator, observability-operator, network-policy-api v0.1.7): 98 of 99 objects valid, the `Template` has no schema; yamllint; the repository rules of `07-validate.sh`, including negative tests (Secret, Automatic approval, CHACHA20, mismatched Git URL) | Applying anything to a cluster; CRD CEL rules and admission webhooks; whether the operators accept the values; Argo CD server-side apply and diff behaviour on cluster singletons; the operator channel names against a live catalog |
-| `04-gitops/01-bootstrap-gitops.sh` | Checks and `--apply` path against a **mock** `oc` (install plan approval, Git CA ConfigMap patch, repository Secret, root app, change log); the Secret and ConfigMap rendering with the **real** `oc` client (`--dry-run=client`, `label --local`) | A real GitOps operator install and Argo CD sync |
-| `04-gitops/02-approve-installplans.sh` | Listing, single approval, `--all-in-repo` filtering to the overlay's namespaces, error cases, change log, against a mock `oc` | Real install plans |
-| `04-gitops/03-create-secrets.sh` | Dry run, `--apply`, skip logic, file-mode enforcement, newline stripping of the client secret, change log with SHA-256, against a mock `oc` | Whether OAuth, the log forwarder, Loki, and OADP accept the objects |
-| `04-gitops/04-rhacs-register-cluster.sh`, `06-import-rhacs-feed.sh` | Endpoint, CA and credential discovery, idempotence, newest-file selection, age and version warnings, ledger entry, file move, against a mock `oc` and a mock `roxctl` | Real `roxctl` against Central (the `crs generate` and `upload-db` syntax is from Red Hat documentation; `--ca`, `ROX_ADMIN_PASSWORD`, and the `central-tls`/`ca.pem` and `central-htpasswd` names are not verified) |
-| `04-gitops/05-lock-down-access.sh` | Refusal as `system:admin`, group and binding checks, removal and idempotence, against a mock `oc` | A real cluster |
-| `04-gitops/07-validate.sh` | Run in full (shellcheck, yamllint, kubeconform, rules) | `--server` (needs a cluster) |
+| `01-mirror/imageset-config.yaml` | The same content (before comments were added) was accepted by the real `oc-mirror` 4.22 | Mirroring the release and operator catalogs (needs a pull secret) |
+| Phase 1 commands | An earlier, script-based version ran: real downloads of `oc`, `oc-mirror` 4.22.18, mirror registry 2.0.9, and `roxctl` 4.11.7 with Red Hat GPG verification of the checksum lists; real `oc-mirror --v2` mirror-to-disk of small public images, including incremental runs; real `roxctl scanner download-db` for 4.11.7; packaging and signature checks rejecting modified, added, and unsigned files | The command sequences as now written in the docs; a FIPS-mode workstation; real transfer media |
+| Phase 2 commands | Flags, Quay `config.yaml` keys, and Quay API calls are carried over from the earlier script-based version, which was tested against the upstream `config.yaml` template, a mock Quay API, a mock HTTPS server, and a `registry:2` disk-to-mirror import | Everything as now written: a real mirror registry, `podman login --authfile` credential files, installer extraction, a departmental Git server |
+| `03-install/install-config.yaml`, `install-config-pxe-excerpt.yaml` | YAML parses; VIPs and provisioning addresses are in the machine network; three control plane hosts; unique boot MAC addresses | Acceptance by `openshift-install-fips`; `nmstatectl gc` of the host network configuration |
+| `03-install/manifests/*.bu`, `cluster-network-03-config.yml` | `butane --strict` 0.29.0 converts all four Butane files (TPM 2.0 LUKS root with `fips: true`; chrony); YAML parses | Whether the cluster accepts them at install time |
+| Phase 3 commands | — | Not run (needs hardware): installation, Redfish and IPMI calls, Day-1 `oc` commands |
+| `04-gitops/` (bootstrap, components, overlay `ocp1`, ACM policies) | All six layers render with kustomize v5.4.2 (`oc kustomize`); **kubeconform `-strict`** against the Kubernetes schemas, the datreeio CRD catalog, and JSON schemas generated from the **upstream CRDs** (openshift/api, argocd-operator, cluster-logging-operator, Loki operator, stackrox release-4.11, compliance-operator, file-integrity-operator, multiclusterhub-operator, governance-policy-propagator, oadp-operator, observability-operator, network-policy-api v0.1.7): 98 of 99 objects valid, the `Template` has no schema; yamllint; the review rules (every object annotated, no Secrets, manual approval and one catalog source on every Subscription, one Git URL, no CHACHA20, no `insecureSkipVerify`) | Applying anything to a cluster; CRD CEL rules and admission webhooks; whether the operators accept the values; Argo CD server-side apply on cluster singletons; operator channel names against a live catalog |
+| Phase 4 commands (bootstrap, install plans, secrets, RHACS, lock-down) | The `oc create ... --dry-run=client` and `oc label --local` rendering of the repository Secret and Git CA ConfigMap was run with a real `oc` client | Everything against a cluster; `roxctl` against Central (`crs generate` and `upload-db` syntax is from Red Hat documentation; `--ca`, the `central-tls`/`ca.pem` key, and the CRS expiry annotation are not verified) |
 | Documentation | Strict MkDocs build; link and anchor check | Review by Red Hat, CCCS, or an assessor |
 
 ## Sources
@@ -106,6 +88,7 @@ and the Logging `stable-6.x` pattern; the Compliance Operator variable
 Cluster Observability Operator `UIPlugin` fields (schema-valid only); whether a project request
 template can carry the extra `data-classification` label without a parameter.
 
-Several operator package names in `versions.env` were not found in Red Hat documentation; see
+Several operator package names in `01-mirror/imageset-config.yaml` were not found in Red Hat
+documentation; see
 [Versions and pinned content](versions.md#operators-and-why-they-are-mirrored). Confirm them
 against the live catalog.

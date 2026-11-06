@@ -1,0 +1,14 @@
+# EXAMPLE — not validated. OVN-Kubernetes IPsec for east-west pod traffic (SC-8, AD-05).
+# Field from the openshift/api operator.openshift.io/v1 Network type
+# (spec.defaultNetwork.ovnKubernetesConfig.ipsecConfig.mode: Full | External | Disabled).
+# Copy to <install-dir>/manifests/ after `openshift-install-fips create manifests`.
+apiVersion: operator.openshift.io/v1
+kind: Network
+metadata:
+  name: cluster
+spec:
+  defaultNetwork:
+    type: OVNKubernetes
+    ovnKubernetesConfig:
+      ipsecConfig:
+        mode: Full

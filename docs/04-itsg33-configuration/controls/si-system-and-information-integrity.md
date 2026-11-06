@@ -28,8 +28,9 @@
 
 **Configuration — controlled operator updates:** in Git. File: `04-gitops/components/operators/`.
 
-Every operator Subscription uses `installPlanApproval: Manual`. Install plans are approved under a
-change ticket with `04-gitops/02-approve-installplans.sh`, which records each approval.
+Every operator Subscription uses `installPlanApproval: Manual`. Install plans are reviewed and
+approved by hand under a change ticket, and each approval is recorded in the change record
+([Approving install plans](../operators.md#approving-install-plans)).
 
 See [how the configuration is applied](../operators.md).
 

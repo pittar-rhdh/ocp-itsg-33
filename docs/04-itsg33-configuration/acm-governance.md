@@ -27,8 +27,9 @@ results by ITSG-33 family and control.
 | `itsg33-ra-5-rhacs-offline` | Central in offline mode | RA-5 |
 | `itsg33-ca-7-no-high-severity-failures` | No failing high-severity Compliance Operator check | CA-7 |
 
-The first two policies stay non-compliant until `05-lock-down-access.sh` runs, and the RHACS,
-logging, and file integrity policies until their operators are installed. That is expected.
+`itsg33-ac-6-no-self-provisioning` and `itsg33-ia-2-kubeadmin-removed` stay non-compliant until
+the [access lock-down](platform-configuration.md#access-lock-down), and the RHACS, logging, and
+file integrity policies until their operators are installed. That is expected.
 
 ## Placement
 

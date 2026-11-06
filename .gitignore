@@ -21,11 +21,6 @@ kubeconfig*
 *.pem
 *.key
 *.p12
-!**/*.example.*
-
-# Local overrides of the version pins / environment
-versions.local.env
-*.local.env
 
 # oc-mirror workspaces, archives and caches
 **/working-dir/
@@ -38,9 +33,8 @@ mirror_seq*.tar
 .openshift_install*
 *.ign
 
-# Phase 3 inventories and credentials if kept next to the repository
-hosts.yaml
-bmc-credentials.env
+# Filled-in copies of the examples (they hold credentials)
+*.local.yaml
 
 # Evidence bundles (Protected B once populated; store in an approved repository)
 evidence/

@@ -2,7 +2,7 @@
 # project starts with restricted pod security, default-deny network policy
 # (with ingress, monitoring and DNS allowed), a quota, and default limits.
 # Projects are requested through Git or a ticket; self-provisioning is removed
-# by 04-gitops/05-lock-down-access.sh.
+# by hand once IdP login works (docs: Platform configuration, Access lock-down).
 apiVersion: template.openshift.io/v1
 kind: Template
 metadata:

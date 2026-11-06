@@ -2,6 +2,9 @@
 
 [← Phase 3](index.md)
 
+> **Examples only — not validated.** The commands and values on this page are examples. Test and
+> adapt them before use. See [Validation status](../reference/validation-status.md).
+
 Facts on this page come from the OpenShift 4.22 *Installing on bare metal* guide, chapter 3
 (installer-provisioned infrastructure), unless noted.
 
@@ -29,8 +32,9 @@ Facts on this page come from the OpenShift 4.22 *Installing on bare metal* guide
 
 Reserve on the machine network: the API VIP, the ingress VIP, the provisioner, and one address
 per node. With `provisioningNetwork: Disabled`, Red Hat also asks for two machine-network
-addresses for the provisioning services. The VIPs must be inside `MACHINE_NETWORK_CIDR` (the
-render script checks this).
+addresses for the provisioning services (`10.10.0.7` and `10.10.0.8` in the example). The VIPs
+and these addresses must be inside the machine network (`10.10.0.0/24` in the example), and the
+two VIPs must differ.
 
 ### Ports
 
@@ -55,7 +59,7 @@ render script checks this).
 | Each node and the provisioner | A and PTR | Node address. RHCOS uses reverse DNS (or DHCP) to set host names. |
 
 The upstream DNS servers must accept **both TCP and UDP** from the nodes (CoreDNS needs both).
-`02-validate-environment.sh` checks all of this from the provisioner.
+See [Checks](#checks) for the `dig` commands.
 
 ### Load balancing (AD-16)
 
@@ -80,7 +84,7 @@ sudo useradd kni && sudo passwd kni
 echo "kni ALL=(root) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/kni && sudo chmod 0440 /etc/sudoers.d/kni
 
 # Packages from the high-side RHEL content source (no subscription-manager on the high side)
-sudo dnf install -y libvirt qemu-kvm mkisofs python3-devel jq ipmitool nmstate python3-pyyaml bind-utils
+sudo dnf install -y libvirt qemu-kvm mkisofs python3-devel jq ipmitool nmstate bind-utils
 sudo usermod --append --groups libvirt kni
 
 sudo systemctl start firewalld
@@ -149,30 +153,125 @@ interfaces:
         - name: eno1
 ```
 
-For PXE, add a `provisioning` bridge on the provisioning NIC with an address in
-`PROVISIONING_NETWORK_CIDR` (Red Hat's example uses `172.22.0.254/24`). Back up the result with
+For PXE, add a `provisioning` bridge on the provisioning NIC with an address in the
+provisioning network (`172.22.0.0/24` in the example; Red Hat's example uses `172.22.0.254/24`). Back up the result with
 `nmstatectl show > backup-nmstate.yml`.
 
 ### Phase 2 hand-off
 
-Copy these from the registry host into `INPUTS_DIR` (default `~/ocp-install/inputs`), for
-example with `scp` over the MRZ management network:
+Copy these from the registry host (see the
+[Phase 2 hand-off](../02-high-side/populate-registry.md#hand-off-to-phase-3)) into an inputs
+directory on the provisioner, for example `~/ocp-install/inputs`, with `scp` over the MRZ
+management network:
 
-| File | From the registry host |
+| File | Used for |
 |---|---|
-| `release.env`, `openshift-install-fips` | `/data/ocp/installer/<version>/` |
-| `idms-oc-mirror.yaml` | `/data/ocp/cluster-resources/current/` |
-| `cluster-resources/` (whole directory) | `/data/ocp/cluster-resources/current/` (used after install) |
-| `cluster-pull-secret.json` (mode 0600) | `CLUSTER_PULL_SECRET_FILE` |
-| `ca-bundle.crt` | `TLS_CA_BUNDLE` |
-| `oc`, `butane` | `/data/ocp/tools/<version>/bin/` |
+| `openshift-install-fips`, with its SHA-256 and the release digest recorded in Phase 2 | The installer, pinned to the transferred release |
+| `idms-oc-mirror.yaml` | `imageDigestSources` in `install-config.yaml` |
+| `cluster-resources/` (whole oc-mirror output directory) | Mirrored catalogs, ITMS, and release signatures after install |
+| `cluster-pull-secret.json` (mode 0600) | `pullSecret` (pull-only mirror robot) |
+| `ca-bundle.crt` | `additionalTrustBundle`, and `--cacert` for the registry checks |
+| `oc`, `butane` | Client tools |
 
-`01-check-provisioner.sh` verifies the installer against the checksum in `release.env` and that
-it is pinned to the transferred release.
+Keep install records in an evidence directory, for example `~/ocp-install/evidence/ocp1`
+(mode 0700; Protected B once populated).
+
+```bash
+mkdir -p ~/ocp-install/inputs ~/ocp-install/evidence/ocp1
+chmod 0700 ~/ocp-install ~/ocp-install/evidence
+export PATH=~/ocp-install/inputs:$PATH      # oc, butane, openshift-install-fips
+```
 
 ## Checks
 
+Run these before preparing `install-config.yaml`, and keep the output with the change record.
+One way is to record the session with `script`:
+
 ```bash
-03-install/01-check-provisioner.sh     # host, packages, bridges, firewall, SSH key, hand-off
-03-install/02-validate-environment.sh  # DNS, PTR, registry, NTP, every BMC (report kept as evidence)
+script ~/ocp-install/evidence/ocp1/environment-check-$(date +%Y%m%d).txt
+# ... run the checks below, then: exit
 ```
+
+### Host settings and packages
+
+```bash
+cat /etc/redhat-release                        # Red Hat Enterprise Linux release 9.x
+fips-mode-setup --check                        # FIPS mode is enabled.
+getenforce                                     # Enforcing
+chronyc -n tracking | grep 'Leap status'       # Normal
+id                                             # the installation user (not root), in the libvirt group
+rpm -q libvirt qemu-kvm nmstate ipmitool jq bind-utils
+sudo virsh pool-info default                   # State: running, Autostart: yes
+df -h /var/lib/libvirt/images                  # about 100 GiB free for the bootstrap VM
+ip -br addr show baremetal                     # 10.10.0.4/24 (and "provisioning" for PXE)
+sudo firewall-cmd --list-all                   # services: http; ports: 6180/tcp 6183/tcp
+ssh-keygen -lf ~/.ssh/ocp-core_ecdsa.pub       # (ECDSA) or (RSA), never (ED25519) in FIPS mode
+```
+
+### Installer and hand-off files
+
+```bash
+cd ~/ocp-install/inputs
+sha256sum openshift-install-fips               # must match the checksum recorded in Phase 2
+./openshift-install-fips version               # release image quay.io/openshift-release-dev/ocp-release@sha256:<release-digest>
+stat -c '%a %n' cluster-pull-secret.json       # 600
+jq -r '.auths | keys[]' cluster-pull-secret.json   # only registry.example.gc.ca:8443; no Red Hat registries
+oc version --client
+butane --version
+```
+
+### DNS and NTP
+
+```bash
+dig +short api.ocp1.example.gc.ca              # 10.10.0.5 (API VIP)
+dig +short -x 10.10.0.5                        # api.ocp1.example.gc.ca.
+dig +short test.apps.ocp1.example.gc.ca        # 10.10.0.6 (ingress VIP, wildcard)
+dig +short api-int.ocp1.example.gc.ca          # empty, or the API VIP
+dig +tcp +short api.ocp1.example.gc.ca         # DNS over TCP works too
+
+# Every node needs a PTR record (RHCOS uses it to set the host name)
+for ip in 10.10.0.10 10.10.0.11 10.10.0.12 10.10.0.20 10.10.0.21 10.10.0.22; do
+  echo "${ip} -> $(dig +short -x "${ip}")"
+done
+
+dig +short ntp1.example.gc.ca ntp2.example.gc.ca
+chronyc -n sources                             # the departmental servers, one selected (^*)
+```
+
+### Mirror registry and release
+
+```bash
+cd ~/ocp-install/inputs
+curl --cacert ca-bundle.crt -s -o /dev/null -w '%{http_code}\n' \
+  https://registry.example.gc.ca:8443/health/instance          # 200
+oc image info --registry-config cluster-pull-secret.json --certificate-authority ca-bundle.crt \
+  registry.example.gc.ca:8443/mirror/openshift/release-images@sha256:<release-digest>
+```
+
+### BMCs
+
+Check every BMC in the inventory, with TLS verification against the CA that signed the BMC
+certificates (the same CA as `bmcVerifyCA` in `install-config.yaml`). `curl -u <user>` without a
+password prompts for it, so the password is not on the command line or in the shell history.
+
+```bash
+# Redfish (virtual media): HTTP 200 means reachable, TLS verified, and credentials accepted
+curl --cacert ~/ocp-install/bmc-ca.crt -u '<bmc-username>' -s -o /dev/null -w '%{http_code}\n' \
+  https://10.20.0.10/redfish/v1/Systems/1
+
+# Power state and boot settings of one system
+curl --cacert ~/ocp-install/bmc-ca.crt -u '<bmc-username>' -s \
+  https://10.20.0.10/redfish/v1/Systems/1 | jq '{PowerState, Boot}'
+
+# Dell iDRAC uses a different system ID
+curl --cacert ~/ocp-install/bmc-ca.crt -u '<bmc-username>' -s -o /dev/null -w '%{http_code}\n' \
+  https://10.20.0.12/redfish/v1/Systems/System.Embedded.1
+
+# IPMI (PXE alternative only; -a prompts for the password)
+ipmitool -I lanplus -H 10.20.0.12 -U '<bmc-username>' -a power status
+```
+
+A `000` code means the BMC is unreachable or its certificate isn't trusted. With virtual media,
+every BMC address in `install-config.yaml` must use a virtual-media driver
+(`redfish-virtualmedia://` or `idrac-virtualmedia://`); `redfish+http://` (no TLS) is not
+acceptable in this design (SC-8).

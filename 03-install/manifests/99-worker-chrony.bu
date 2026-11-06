@@ -1,0 +1,24 @@
+# EXAMPLE — not validated. chrony configuration for the "worker" MachineConfigPool (AU-8).
+# Red Hat: for disconnected clusters you must configure NTP servers on the nodes.
+# Change: the server lines (departmental NTP servers). Keep the master and worker
+# files identical apart from the role.
+# Convert: butane --strict 99-worker-chrony.bu -o <install-dir>/openshift/99-worker-chrony.yaml
+variant: openshift
+version: 4.22.0
+metadata:
+  name: 99-worker-chrony
+  labels:
+    machineconfiguration.openshift.io/role: worker
+storage:
+  files:
+    - path: /etc/chrony.conf
+      mode: 0644
+      overwrite: true
+      contents:
+        inline: |
+          server ntp1.example.gc.ca iburst
+          server ntp2.example.gc.ca iburst
+          driftfile /var/lib/chrony/drift
+          makestep 1.0 3
+          rtcsync
+          logdir /var/log/chrony

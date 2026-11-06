@@ -1,6 +1,7 @@
 # OpenShift Update Service: update graph from mirrored graph data (AD-19)
 # Channel: confirm against the mirrored catalog with
-#   01-mirror/03-list-operator-channels.sh cincinnati-operator
+#   oc get packagemanifest cincinnati-operator -n openshift-marketplace \
+#     -o jsonpath='{.status.channels[*].name}'
 # The catalog source name is set for every Subscription by the cluster overlay.
 apiVersion: v1
 kind: Namespace

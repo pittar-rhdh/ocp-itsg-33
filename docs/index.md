@@ -1,9 +1,9 @@
 # OpenShift 4.22 on Bare Metal, Air-Gapped, for ITSG-33
 
-> **Status:** Draft v0.5 — Phase 0 (architecture), Phases 1–3 (mirroring, high-side setup, cluster
-> install), and the ITSG-33 control guidance are written; the other phases are planned.
+> **Status:** Draft v0.6 — Phases 0–4 (architecture, mirroring, high-side setup, cluster install,
+> ITSG-33 configuration as code) are written; Phases 5 and 6 are in progress.
 
-> **Examples only — not validated.** Everything in this repository (scripts, configuration,
+> **Examples only — not validated.** Everything in this repository (example files, commands,
 > procedures) is an **example**. None of it has been run end to end against a real Red Hat
 > subscription, a real air-gapped environment, real bare-metal hardware, or a real OpenShift
 > cluster. Review, adapt, and test it in a non-production environment, and check it against the
@@ -14,7 +14,7 @@
 
 ## Purpose
 
-A **lightweight, prescriptive reference implementation** for running
+A **lightweight, prescriptive reference guide** for running
 **Red Hat OpenShift Container Platform (OCP) 4.22** on **bare metal** in an **air-gapped**
 environment, configured and evidenced against the Canadian Centre for Cyber Security (CCCS)
 **ITSG-33** controls for **Protected B / Medium Integrity / Medium Availability (PBMM)** (ITSG-33
@@ -91,16 +91,15 @@ docs/                         Documentation (published with TechDocs / MkDocs)
   00-architecture/            ITSG-33 overview, reference architecture, decisions, shared responsibility
   01-mirroring/ .. 06-sops/   One section per phase
   reference/                  Versions, references, backlog
-versions.env                  Single source of truth for versions, operators, and images
-lib/common.sh                 Helpers shared by the scripts of every phase
-01-mirror/                    Phase 1 scripts, generated imageset-config.yaml, transfer record template
-02-high-side/                 Phase 2 scripts (accept, registry install/hardening/access, import, installer)
-03-install/                   Phase 3 templates, host inventory examples, install-time manifests, scripts
-04-gitops/                    Phase 4 GitOps bootstrap, components, cluster overlays, ACM policies, scripts
-05-evidence/                  Phase 5 configuration and scripts (added as it is built)
+01-mirror/                    Example ImageSetConfiguration, signature policy, transfer record template
+03-install/                   Example install-config.yaml (virtual media, PXE excerpt) and install-time manifests
+04-gitops/                    Example GitOps repository: bootstrap, components, cluster overlay, ACM policies
 ```
 
-See [Versions and pinned content](reference/versions.md) for how `versions.env` is used.
+This repository is a reference, not an automation tool. It contains no scripts: the docs show
+the commands for each step, and the directories above hold example files that show what the
+configuration should look like. Copy and adapt them; don't run them unchanged. Versions are
+recorded in [Versions and pinned content](reference/versions.md).
 
 ## Scope
 

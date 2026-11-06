@@ -1,7 +1,7 @@
 # Forward audit and infrastructure logs to the departmental SIEM over mutual
 # TLS (AU-4, AU-6, AU-9), and every log type to the on-cluster LokiStack.
 #
-# Created outside Git by 04-gitops/03-create-secrets.sh:
+# Created outside Git (docs: Platform configuration, Secrets kept outside Git):
 #   Secret openshift-logging/siem-tls (ca-bundle.crt, tls.crt, tls.key)
 # Output TLS follows the cluster API server TLS profile unless set here.
 apiVersion: observability.openshift.io/v1

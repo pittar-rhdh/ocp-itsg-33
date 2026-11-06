@@ -2,8 +2,12 @@
 
 [← Phase 3](index.md)
 
+> **Examples only — not validated.** The example files and commands on this page have not been
+> used for a real installation. Test and adapt them before use. See
+> [Validation status](../reference/validation-status.md).
+
 Some protections can only be set when the cluster is installed. Getting them wrong means
-reinstalling the cluster, so they are generated from reviewed templates and checked after the
+reinstalling the cluster, so they come from reviewed example files and are checked after the
 install.
 
 | Setting | Where | Can it be changed later? | Control |
@@ -16,16 +20,47 @@ install.
 | Mirror-only image sources and trust | `imageDigestSources`, `additionalTrustBundle` | Yes | CM-11, SI-7 |
 | SSH key for `core` | `sshKey` (RSA/ECDSA in FIPS mode) | Yes (MachineConfig) | IA-5 |
 
-`04-create-manifests.sh` adds the manifests after `openshift-install-fips create manifests`,
-using Butane for the MachineConfigs, and keeps a copy (with checksums) in `EVIDENCE_DIR`, because
-the installer consumes them.
+## Add the manifests
+
+Copy the Butane sources and the network manifest from `03-install/manifests/` to the provisioner
+(for example `~/ocp-install/manifests-src/`), change the NTP servers if needed, and have a second
+person review them (CM-5). Then:
+
+```bash
+INSTALL_DIR=~/ocp-install/ocp1
+EVIDENCE_DIR=~/ocp-install/evidence/ocp1
+SRC=~/ocp-install/manifests-src
+
+sha256sum ~/ocp-install/inputs/openshift-install-fips   # still the checksum recorded in Phase 2
+
+# Consumes install-config.yaml (the working copy is the backup)
+openshift-install-fips create manifests --dir "${INSTALL_DIR}" --log-level info
+
+# MachineConfigs (chrony, LUKS2/TPM 2.0) into openshift/
+for role in master worker; do
+  butane --strict "${SRC}/99-${role}-chrony.bu" -o "${INSTALL_DIR}/openshift/99-${role}-chrony.yaml"
+  butane --strict "${SRC}/99-${role}-disk-encryption.bu" -o "${INSTALL_DIR}/openshift/99-${role}-disk-encryption.yaml"
+done
+
+# IPsec into manifests/
+cp "${SRC}/cluster-network-03-config.yml" "${INSTALL_DIR}/manifests/"
+
+# Evidence: the installer consumes the manifests during create cluster
+stamp=$(date +%Y%m%d-%H%M%S)
+tar -C "${INSTALL_DIR}" -czf "${EVIDENCE_DIR}/manifests-${stamp}.tar.gz" manifests openshift
+(cd "${INSTALL_DIR}" && find manifests openshift -type f | LC_ALL=C sort | xargs sha256sum) \
+  > "${EVIDENCE_DIR}/manifests-${stamp}.sha256"
+(cd "${EVIDENCE_DIR}" && sha256sum "manifests-${stamp}".* >> SHA256SUMS)
+```
+
+Review the generated manifests before [running the installer](run-install.md).
 
 ## FIPS
 
 - `fips: true` in `install-config.yaml`.
 - Red Hat (since 4.16): the installer must run on a **RHEL 9 host in FIPS mode**, and must be the
-  **FIPS-capable** installer (`openshift-install-fips`, extracted in Phase 2). `05-install-cluster.sh`
-  refuses to start on a non-FIPS host.
+  **FIPS-capable** installer (`openshift-install-fips`, extracted in Phase 2). Check the host with
+  `fips-mode-setup --check` before every installer command.
 - Red Hat: FIPS 140 validation applies to the RHEL cryptographic libraries on x86_64, ppc64le, and
   s390x. Check the current CMVP status for the RHEL 9 modules in your release (ITSP.40.111).
 - In FIPS mode the SSH key must be RSA or ECDSA (Red Hat), and the Butane disk-encryption config
@@ -45,7 +80,7 @@ mirroring*):
 - Encryption covers the installation (boot) disk only, not workload disks. Workload data is
   protected by the storage array or CSI encryption (AD-13).
 
-The template (`03-install/manifests/99-ROLE-disk-encryption.bu.tmpl`) renders to:
+`03-install/manifests/99-worker-disk-encryption.bu` (the master file differs only in the role):
 
 ```yaml
 variant: openshift
@@ -63,12 +98,12 @@ openshift:
 ```
 
 Butane 0.29 (transferred in Phase 1) converts it to a MachineConfig with a LUKS device bound to the
-TPM through Clevis. Every node needs TPM 2.0 enabled in firmware. Set `DISK_ENCRYPTION=none` only
-with a recorded justification; the script warns.
+TPM through Clevis. Every node needs TPM 2.0 enabled in firmware. Leave the disk-encryption
+manifests out only with a recorded justification (SC-28).
 
 ## IPsec (AD-05)
 
-`manifests/cluster-network-03-config.yml`:
+`03-install/manifests/cluster-network-03-config.yml`, copied to `<install-dir>/manifests/`:
 
 ```yaml
 apiVersion: operator.openshift.io/v1
@@ -87,20 +122,23 @@ spec:
 in `openshift/api`, release-4.22). `Full` encrypts pod-to-pod traffic between nodes. The field
 names come from the API source; the install-time procedure (adding this file in the `manifests`
 directory) follows the pattern Red Hat documents for network customizations, but was not found as
-a 4.22 bare-metal IPI procedure through the documentation search. Confirm in a lab.
+a 4.22 bare-metal IPI procedure through the documentation search. Confirm in a lab. Leaving IPsec
+out (`Disabled`) needs a recorded TRA justification (SC-8).
 
 ## Time (AU-8)
 
-Red Hat: for disconnected clusters, you must configure NTP servers on the nodes. The chrony
-template writes `/etc/chrony.conf` for the `master` and `worker` roles with one `server … iburst`
-line per entry in `NTP_SERVERS`. `additionalNTPServers` in `install-config.yaml` only helps hosts
+Red Hat: for disconnected clusters, you must configure NTP servers on the nodes.
+`03-install/manifests/99-{master,worker}-chrony.bu` write `/etc/chrony.conf` for the `master` and
+`worker` roles with one `server … iburst` line per departmental NTP server
+(`ntp1.example.gc.ca`, `ntp2.example.gc.ca`). `additionalNTPServers` in `install-config.yaml` only helps hosts
 sync before installation. Red Hat also notes: define a consistent date and time format in every
 node's BIOS, or installation might fail.
 
 ## Settings applied right after installation
 
-These can be set after installation, so they're applied by `06-post-install.sh --configure`
-before any workload runs, and Phase 4 (GitOps) takes ownership of them afterwards:
+These can be set after installation, so they're applied with `oc` right after the install, before
+any workload runs ([commands](run-install.md#day-1-settings)). Phase 4 (GitOps) takes ownership
+of them afterwards:
 
 | Setting | How | Control |
 |---|---|---|

@@ -3,9 +3,9 @@
 #
 # The web login page notice is a login template Secret
 # (openshift-config/itsg33-login-template) referenced by the OAuth resource in
-# the identity component. 04-gitops/03-create-secrets.sh creates it from the
-# reviewed HTML file named in LOGIN_TEMPLATE_FILE, because a template with
-# errors stops every user from logging in.
+# the identity component. It is created outside Git from a reviewed HTML file
+# (docs: Platform configuration, Secrets kept outside Git), because a template
+# with errors stops every user from logging in.
 apiVersion: console.openshift.io/v1
 kind: ConsoleNotification
 metadata:

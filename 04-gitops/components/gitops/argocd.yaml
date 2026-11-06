@@ -2,9 +2,9 @@
 # (openshift-gitops/openshift-gitops). Applied with server-side apply, so only
 # the fields below are owned by Git; the operator keeps its other defaults.
 #
-# The Git server CA and the repository credentials are NOT here: the bootstrap
-# script (04-gitops/01-bootstrap-gitops.sh) adds them, because the operator
-# reads spec.tls.initialCerts only when it first creates the instance.
+# The Git server CA and the repository credentials are NOT here: they are
+# added by hand during the bootstrap (docs: GitOps bootstrap), because the
+# operator reads spec.tls.initialCerts only when it first creates the instance.
 apiVersion: argoproj.io/v1beta1
 kind: ArgoCD
 metadata:

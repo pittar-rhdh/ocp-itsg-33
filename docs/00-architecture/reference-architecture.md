@@ -105,8 +105,9 @@ disconnected **high side**, through a controlled transfer.
 | **Red Hat Advanced Cluster Security** | Vulnerability management (offline feeds), admission control, runtime threat detection, network graph | RA-5, SI-3, SI-4, CM-7, IR-4 |
 | **Vendor CSI driver** (external storage) | Persistent volumes from departmental enterprise storage | SC-28, CP-9 |
 
-The exact operator list, channels, and versions that get mirrored are pinned in
-[`versions.env`](../reference/versions.md) and in the Phase 1 `ImageSetConfiguration`.
+The exact operator list, channels, and versions are pinned in the Phase 1 `ImageSetConfiguration`
+(`01-mirror/imageset-config.yaml`) and the Phase 4 operator Subscriptions; see
+[Versions and pinned content](../reference/versions.md).
 
 ## Supporting services (assumed to exist on the high side)
 

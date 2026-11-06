@@ -1,6 +1,7 @@
 # Cluster Observability Operator: console log UI plugin and monitoring stacks
 # Channel: confirm against the mirrored catalog with
-#   01-mirror/03-list-operator-channels.sh cluster-observability-operator
+#   oc get packagemanifest cluster-observability-operator -n openshift-marketplace \
+#     -o jsonpath='{.status.channels[*].name}'
 # The catalog source name is set for every Subscription by the cluster overlay.
 apiVersion: v1
 kind: Namespace

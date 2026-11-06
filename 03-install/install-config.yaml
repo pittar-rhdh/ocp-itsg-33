@@ -1,0 +1,330 @@
+# -----------------------------------------------------------------------------
+# EXAMPLE — not validated. install-config.yaml for OpenShift 4.22 bare-metal IPI,
+# air-gapped, Redfish virtual media, no provisioning network, FIPS.
+#
+# What to change before use:
+#   - baseDomain, metadata.name, networks, VIPs, provisioning IPs, NTP servers
+#   - every host: name, BMC address, bootMACAddress, rootDeviceHints, networkConfig
+#   - <angle-bracket> placeholders: BMC credentials, CA certificates, pull secret, SSH key
+#   - imageDigestSources: copy from the oc-mirror idms-oc-mirror.yaml (Phase 2 hand-off)
+#
+# The filled-in file contains secrets (BMC passwords, pull secret): keep it out of
+# Git, mode 0600. The installer consumes (deletes) it during `create manifests`.
+# Check accepted fields with: openshift-install-fips explain installconfig.platform.baremetal
+# -----------------------------------------------------------------------------
+apiVersion: v1
+baseDomain: example.gc.ca
+metadata:
+  name: ocp1
+# FIPS can only be set at installation. The installer must run on a RHEL 9 host
+# in FIPS mode, and must be the FIPS-capable binary (openshift-install-fips).
+fips: true
+networking:
+  networkType: OVNKubernetes
+  machineNetwork:
+    - cidr: 10.10.0.0/24          # the routable "baremetal" network
+  clusterNetwork:
+    - cidr: 10.128.0.0/14         # pods (cannot change after install)
+      hostPrefix: 23
+  serviceNetwork:
+    - 172.30.0.0/16
+controlPlane:
+  name: master
+  replicas: 3
+  hyperthreading: Enabled
+  platform:
+    baremetal: {}
+compute:
+  - name: worker
+    replicas: 3                   # 0 or >= 2 (Red Hat: never exactly 1)
+    hyperthreading: Enabled
+    platform:
+      baremetal: {}
+platform:
+  baremetal:
+    apiVIPs:
+      - 10.10.0.5                 # api.ocp1.example.gc.ca (A and PTR)
+    ingressVIPs:
+      - 10.10.0.6                 # *.apps.ocp1.example.gc.ca
+    loadBalancer:
+      # OpenShiftManagedDefault: keepalived/HAProxy on the nodes.
+      # Alternative (AD-16): a departmental load balancer on the same L2 network
+      # as the control plane nodes:
+      #   type: UserManaged
+      type: OpenShiftManagedDefault
+    externalBridge: baremetal     # bridge on the provisioner (machine network)
+    # Virtual media: no provisioning network.
+    provisioningNetwork: "Disabled"
+    # Red Hat asks for two reserved machine-network addresses for the provisioning
+    # services when the provisioning network is disabled (the 4.22 installer
+    # source treats them as optional). Both must be in the machine network.
+    clusterProvisioningIP: 10.10.0.7
+    bootstrapProvisioningIP: 10.10.0.8
+    # Only if the machine network has no DHCP for the bootstrap VM:
+    # bootstrapExternalStaticIP: 10.10.0.9
+    # bootstrapExternalStaticGateway: 10.10.0.1
+    # bootstrapExternalStaticDNS: 10.10.0.2
+    # Only if the installer cannot get the bootstrap VM image from the release:
+    # an internal HTTPS URL with "?sha256=<uncompressed-sha256>".
+    # bootstrapOSImage: https://<internal-web-server>/rhcos-qemu.x86_64.qcow2.gz?sha256=<uncompressed-sha256>
+    # Pre-install clock sync only; the chrony MachineConfigs set NTP permanently.
+    additionalNTPServers:
+      - ntp1.example.gc.ca
+      - ntp2.example.gc.ca
+    # CA that signed the BMC certificates. Red Hat's 4.22 text shows "bmcCACert"
+    # in examples and "bmcVerifyCA" in the parameter table; the 4.22 installer
+    # source accepts "bmcVerifyCA". Omit to use the system trust store.
+    bmcVerifyCA: |
+      -----BEGIN CERTIFICATE-----
+      <bmc-issuing-ca-pem>
+      -----END CERTIFICATE-----
+    # Addresses:
+    #   HPE iLO and most Redfish BMCs:  redfish-virtualmedia://<bmc>/redfish/v1/Systems/1
+    #   Dell iDRAC:                     idrac-virtualmedia://<bmc>/redfish/v1/Systems/System.Embedded.1
+    #                                   (Red Hat: redfish-virtualmedia:// does not work on Dell)
+    # Never set disableCertificateVerification: true or use redfish+http:// (SC-8).
+    # bootMACAddress is required even without a provisioning network.
+    # rootDeviceHints: a persistent attribute (by-path link or WWN), not /dev/sdX.
+    # networkConfig (NMState): test each block with `nmstatectl gc`.
+    # bootMode UEFI with Secure Boot enabled manually in firmware; "UEFISecureBoot"
+    # only on the HPE and Dell generations Red Hat lists.
+    hosts:
+      - name: openshift-master-0
+        role: master
+        bmc:
+          address: redfish-virtualmedia://10.20.0.10/redfish/v1/Systems/1
+          username: <bmc-username>
+          password: <bmc-password>
+          disableCertificateVerification: false
+        bootMACAddress: "52:54:00:00:00:10"
+        bootMode: UEFI
+        rootDeviceHints:
+          deviceName: /dev/disk/by-path/pci-0000:00:17.0-ata-1
+        networkConfig:
+          interfaces:
+            - name: eno1
+              type: ethernet
+              state: up
+              mac-address: "52:54:00:00:00:10"
+              ipv4:
+                enabled: true
+                dhcp: false
+                address:
+                  - ip: 10.10.0.10
+                    prefix-length: 24
+              ipv6:
+                enabled: false
+          dns-resolver:
+            config:
+              server:
+                - 10.10.0.2
+          routes:
+            config:
+              - destination: 0.0.0.0/0
+                next-hop-address: 10.10.0.1
+                next-hop-interface: eno1
+      - name: openshift-master-1
+        role: master
+        bmc:
+          address: redfish-virtualmedia://10.20.0.11/redfish/v1/Systems/1
+          username: <bmc-username>
+          password: <bmc-password>
+          disableCertificateVerification: false
+        bootMACAddress: "52:54:00:00:00:11"
+        bootMode: UEFI
+        rootDeviceHints:
+          deviceName: /dev/disk/by-path/pci-0000:00:17.0-ata-1
+        networkConfig:
+          interfaces:
+            - name: eno1
+              type: ethernet
+              state: up
+              mac-address: "52:54:00:00:00:11"
+              ipv4:
+                enabled: true
+                dhcp: false
+                address:
+                  - ip: 10.10.0.11
+                    prefix-length: 24
+              ipv6:
+                enabled: false
+          dns-resolver:
+            config:
+              server:
+                - 10.10.0.2
+          routes:
+            config:
+              - destination: 0.0.0.0/0
+                next-hop-address: 10.10.0.1
+                next-hop-interface: eno1
+      # Dell example: idrac-virtualmedia:// and a WWN root device hint.
+      - name: openshift-master-2
+        role: master
+        bmc:
+          address: idrac-virtualmedia://10.20.0.12/redfish/v1/Systems/System.Embedded.1
+          username: <bmc-username>
+          password: <bmc-password>
+          disableCertificateVerification: false
+        bootMACAddress: "52:54:00:00:00:12"
+        bootMode: UEFI
+        rootDeviceHints:
+          wwn: "0x5000c500a0b1c2d3"
+        networkConfig:
+          interfaces:
+            - name: eno1
+              type: ethernet
+              state: up
+              mac-address: "52:54:00:00:00:12"
+              ipv4:
+                enabled: true
+                dhcp: false
+                address:
+                  - ip: 10.10.0.12
+                    prefix-length: 24
+              ipv6:
+                enabled: false
+          dns-resolver:
+            config:
+              server:
+                - 10.10.0.2
+          routes:
+            config:
+              - destination: 0.0.0.0/0
+                next-hop-address: 10.10.0.1
+                next-hop-interface: eno1
+      # Bonded example (LACP over eno1 + eno2).
+      - name: openshift-worker-0
+        role: worker
+        bmc:
+          address: redfish-virtualmedia://10.20.0.20/redfish/v1/Systems/1
+          username: <bmc-username>
+          password: <bmc-password>
+          disableCertificateVerification: false
+        bootMACAddress: "52:54:00:00:00:20"
+        bootMode: UEFI
+        rootDeviceHints:
+          deviceName: /dev/disk/by-path/pci-0000:00:17.0-ata-1
+        networkConfig:
+          interfaces:
+            - name: bond0
+              type: bond
+              state: up
+              link-aggregation:
+                mode: 802.3ad
+                port:
+                  - eno1
+                  - eno2
+              ipv4:
+                enabled: true
+                dhcp: false
+                address:
+                  - ip: 10.10.0.20
+                    prefix-length: 24
+              ipv6:
+                enabled: false
+            - name: eno1
+              type: ethernet
+              state: up
+              mac-address: "52:54:00:00:00:20"
+            - name: eno2
+              type: ethernet
+              state: up
+              mac-address: "52:54:00:00:00:21"
+          dns-resolver:
+            config:
+              server:
+                - 10.10.0.2
+          routes:
+            config:
+              - destination: 0.0.0.0/0
+                next-hop-address: 10.10.0.1
+                next-hop-interface: bond0
+      - name: openshift-worker-1
+        role: worker
+        bmc:
+          address: redfish-virtualmedia://10.20.0.21/redfish/v1/Systems/1
+          username: <bmc-username>
+          password: <bmc-password>
+          disableCertificateVerification: false
+        bootMACAddress: "52:54:00:00:00:30"
+        bootMode: UEFI
+        rootDeviceHints:
+          deviceName: /dev/disk/by-path/pci-0000:00:17.0-ata-1
+        networkConfig:
+          interfaces:
+            - name: eno1
+              type: ethernet
+              state: up
+              mac-address: "52:54:00:00:00:30"
+              ipv4:
+                enabled: true
+                dhcp: false
+                address:
+                  - ip: 10.10.0.21
+                    prefix-length: 24
+              ipv6:
+                enabled: false
+          dns-resolver:
+            config:
+              server:
+                - 10.10.0.2
+          routes:
+            config:
+              - destination: 0.0.0.0/0
+                next-hop-address: 10.10.0.1
+                next-hop-interface: eno1
+      - name: openshift-worker-2
+        role: worker
+        bmc:
+          address: redfish-virtualmedia://10.20.0.22/redfish/v1/Systems/1
+          username: <bmc-username>
+          password: <bmc-password>
+          disableCertificateVerification: false
+        bootMACAddress: "52:54:00:00:00:40"
+        bootMode: UEFI
+        rootDeviceHints:
+          deviceName: /dev/disk/by-path/pci-0000:00:17.0-ata-1
+        networkConfig:
+          interfaces:
+            - name: eno1
+              type: ethernet
+              state: up
+              mac-address: "52:54:00:00:00:40"
+              ipv4:
+                enabled: true
+                dhcp: false
+                address:
+                  - ip: 10.10.0.22
+                    prefix-length: 24
+              ipv6:
+                enabled: false
+          dns-resolver:
+            config:
+              server:
+                - 10.10.0.2
+          routes:
+            config:
+              - destination: 0.0.0.0/0
+                next-hop-address: 10.10.0.1
+                next-hop-interface: eno1
+# Content comes only from the mirror registry. Copy the entries from the
+# oc-mirror generated idms-oc-mirror.yaml (spec.imageDigestMirrors); the release
+# entries look like this.
+imageDigestSources:
+  - mirrors:
+      - registry.example.gc.ca:8443/mirror/openshift/release
+    source: quay.io/openshift-release-dev/ocp-v4.0-art-dev
+  - mirrors:
+      - registry.example.gc.ca:8443/mirror/openshift/release-images
+    source: quay.io/openshift-release-dev/ocp-release
+# Departmental CA that issued the mirror registry certificate.
+additionalTrustBundlePolicy: Always
+additionalTrustBundle: |
+  -----BEGIN CERTIFICATE-----
+  <departmental-ca-pem>
+  -----END CERTIFICATE-----
+# Pull-only robot account for the mirror registry, as one line of JSON. It has no
+# credentials for Red Hat services, so the cluster cannot send Telemetry (AD-08).
+pullSecret: '<cluster-pull-secret-json>'
+# RSA or ECDSA public key (ed25519 is not allowed in FIPS mode).
+sshKey: '<ecdsa-or-rsa-public-key>'

@@ -98,7 +98,7 @@ minor version are handled through continuous monitoring (CA-7) and change contro
 | Vulnerability scan of images and nodes | RHACS | Continuous / daily |
 | File integrity check | File Integrity Operator | Every `gracePeriod` (for example, 15 minutes) |
 | Platform health and security alerts | OpenShift Monitoring / Alertmanager | Continuous |
-| Evidence bundle generation | Evidence script / pipeline | Monthly or quarterly |
+| Evidence bundle generation | Evidence collection commands / CI pipeline | Monthly or quarterly |
 | Compliance report to the authorizer | Report from ACM/RHACS/GRC tool | Quarterly |
 
 **Configuration — ACM policy that flags failing Compliance Operator checks:** in Git. File:

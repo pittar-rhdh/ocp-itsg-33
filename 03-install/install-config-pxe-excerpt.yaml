@@ -1,0 +1,51 @@
+# -----------------------------------------------------------------------------
+# EXAMPLE — not validated. EXCERPT, not a complete file: only the parts of
+# install-config.yaml that differ for the PXE alternative (AD-11), a dedicated,
+# non-routed provisioning network. Everything else is as in install-config.yaml.
+#
+# Differences from the virtual media example:
+#   - provisioningNetwork: Managed (Ironic runs DHCP and TFTP on it), with its
+#     CIDR and the provisioner's provisioning bridge; no clusterProvisioningIP /
+#     bootstrapProvisioningIP on the machine network.
+#   - Each node needs a NIC on the provisioning network, PXE-enabled and first in
+#     the boot order; PXE disabled on every other NIC.
+#   - bootMACAddress is the MAC of that provisioning NIC.
+#   - BMC addresses use redfish:// or ipmi:// (network boot). IPMI is not
+#     encrypted: Red Hat says to use it only on a secured, dedicated management
+#     network. Prefer redfish:// where the hardware supports it.
+#   - No networkConfig: with a provisioning network, Red Hat says to use DHCP
+#     reservations (a fully static deployment requires virtual media). Reserve
+#     each node's machine-network address on the departmental DHCP server.
+#   - Manually enabled Secure Boot is supported by Red Hat only with Redfish
+#     virtual media.
+# -----------------------------------------------------------------------------
+platform:
+  baremetal:
+    externalBridge: baremetal
+    provisioningNetwork: "Managed"
+    provisioningNetworkCIDR: 172.22.0.0/24
+    provisioningBridge: provisioning
+    hosts:
+      - name: openshift-master-0
+        role: master
+        bmc:
+          address: redfish://10.20.0.10/redfish/v1/Systems/1
+          username: <bmc-username>
+          password: <bmc-password>
+          disableCertificateVerification: false
+        bootMACAddress: "52:54:00:00:01:10"     # provisioning NIC
+        bootMode: UEFI
+        rootDeviceHints:
+          deviceName: /dev/disk/by-path/pci-0000:00:17.0-ata-1
+      # IPMI example (unencrypted; secured management network only).
+      - name: openshift-master-2
+        role: master
+        bmc:
+          address: ipmi://10.20.0.12
+          username: <bmc-username>
+          password: <bmc-password>
+        bootMACAddress: "52:54:00:00:01:12"
+        bootMode: UEFI
+        rootDeviceHints:
+          deviceName: /dev/disk/by-path/pci-0000:00:17.0-ata-1
+      # ... the other hosts follow the same pattern (redfish:// preferred).

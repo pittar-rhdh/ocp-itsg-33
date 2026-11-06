@@ -1,6 +1,7 @@
 # Compliance Operator: scheduled OpenSCAP scans
 # Channel: confirm against the mirrored catalog with
-#   01-mirror/03-list-operator-channels.sh compliance-operator
+#   oc get packagemanifest compliance-operator -n openshift-marketplace \
+#     -o jsonpath='{.status.channels[*].name}'
 # The catalog source name is set for every Subscription by the cluster overlay.
 apiVersion: v1
 kind: Namespace

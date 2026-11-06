@@ -1,28 +1,18 @@
 # 03-install — Phase 3: Bare-Metal IPI Cluster Install
 
-> **Examples only — not validated.** These scripts have not been run against real hardware, a
-> real mirror registry, or a real OpenShift installation. Read them, adapt them, and test them
-> before use. See [validation status](../docs/reference/validation-status.md).
+> **Examples only — not validated.** These files show what the installation inputs should look
+> like for an air-gapped, FIPS, bare-metal IPI install of OpenShift 4.22. They have not been used
+> against real hardware or a real installation. Copy them outside the repository, change every
+> example value and `<placeholder>`, and test before use.
 
-Run on the provisioner host (RHEL 9, FIPS mode) as the non-root installation user. Full guidance:
-[docs/03-cluster-install](../docs/03-cluster-install/index.md).
-
-| Script | Purpose |
-|---|---|
-| `01-check-provisioner.sh` | Host, packages, libvirt, bridges, firewall, SSH key type, Phase 2 hand-off and installer checksum |
-| `02-validate-environment.sh` | DNS and PTR, mirror registry and release, NTP, every BMC (report to the evidence directory) |
-| `03-render-install-config.sh [--force]` | Generate `install-config.yaml` (secrets, 0600) and a redacted evidence copy |
-| `04-create-manifests.sh` | `create manifests` + chrony, LUKS/TPM 2.0, and IPsec manifests; evidence copy |
-| `05-install-cluster.sh` | `openshift-install-fips create cluster`; logs to the evidence directory |
-| `06-post-install.sh [--configure]` | Day-1 settings (mirrored catalogs, OperatorHub, etcd encryption, audit) and verification |
+The steps and commands are in the guide: [Phase 3 — Bare-Metal IPI Cluster Install](../docs/03-cluster-install/index.md).
 
 | File | Purpose |
 |---|---|
-| `settings.env` | Defaults; override in `settings.local.env` (git-ignored) or with exported variables |
-| `install-config.yaml.tmpl` | Template rendered by `03-render-install-config.sh` |
-| `hosts.virtualmedia.yaml.example`, `hosts.pxe.yaml.example` | Host inventory examples (copy outside the repository) |
-| `bmc-credentials.env.example` | BMC credential file format (keep the real file outside Git, mode 0600) |
-| `manifests/*.tmpl` | Butane sources and the IPsec network manifest |
+| `install-config.yaml` | Complete example: Redfish virtual media, no provisioning network, FIPS, 3 control plane + 3 workers with static NMState addressing, mirror-only `imageDigestSources` |
+| `install-config-pxe-excerpt.yaml` | Only the parts that differ for the PXE provisioning-network alternative |
+| `manifests/99-master-chrony.bu`, `manifests/99-worker-chrony.bu` | Butane: chrony with the departmental NTP servers (AU-8) |
+| `manifests/99-master-disk-encryption.bu`, `manifests/99-worker-disk-encryption.bu` | Butane: LUKS2 boot disk encryption bound to TPM 2.0 (SC-28) |
+| `manifests/cluster-network-03-config.yml` | OVN-Kubernetes IPsec `Full` (SC-8) |
 
-Requires on the provisioner: `python3` with `python3-pyyaml`, `jq`, `nmstate`, `bind-utils`,
-`libvirt`, `ipmitool` (PXE/IPMI only), and `oc` and `butane` from the Phase 2 hand-off.
+The filled-in `install-config.yaml` contains BMC passwords and the pull secret: never commit it.

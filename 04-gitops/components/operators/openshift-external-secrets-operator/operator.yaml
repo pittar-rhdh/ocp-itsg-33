@@ -1,6 +1,7 @@
 # External Secrets: secrets from the departmental secret store (needs cert-manager first)
 # Channel: confirm against the mirrored catalog with
-#   01-mirror/03-list-operator-channels.sh openshift-external-secrets-operator
+#   oc get packagemanifest openshift-external-secrets-operator -n openshift-marketplace \
+#     -o jsonpath='{.status.channels[*].name}'
 # The catalog source name is set for every Subscription by the cluster overlay.
 apiVersion: v1
 kind: Namespace

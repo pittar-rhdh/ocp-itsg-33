@@ -5,11 +5,11 @@
 # documentation, "Enabling offline mode"). Keep egress.connectivityPolicy in
 # this file from the first sync.
 #
-# After Central is running:
-#   04-gitops/04-rhacs-register-cluster.sh   creates the cluster registration
-#                                            secret for the SecuredCluster
-#   04-gitops/06-import-rhacs-feed.sh        uploads the offline vulnerability
-#                                            data (at least daily, RA-5(2))
+# After Central is running (docs: Platform configuration, RHACS):
+#   roxctl central crs generate   cluster registration secret for the
+#                                 SecuredCluster (once)
+#   roxctl scanner upload-db      offline vulnerability data (at least daily,
+#                                 RA-5(2))
 apiVersion: v1
 kind: Namespace
 metadata:

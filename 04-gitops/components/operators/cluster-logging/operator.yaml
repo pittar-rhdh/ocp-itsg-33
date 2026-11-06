@@ -1,6 +1,7 @@
 # Logging Operator: collection and forwarding (same channel as loki-operator)
 # Channel: confirm against the mirrored catalog with
-#   01-mirror/03-list-operator-channels.sh cluster-logging
+#   oc get packagemanifest cluster-logging -n openshift-marketplace \
+#     -o jsonpath='{.status.channels[*].name}'
 # The catalog source name is set for every Subscription by the cluster overlay.
 apiVersion: v1
 kind: Namespace

@@ -43,9 +43,10 @@ remove accounts.
 - **AC-2(4) Automated audit actions:** creating, changing, or deleting `User`, `Group`, `Identity`,
   `RoleBinding`, and `ClusterRoleBinding` objects is recorded in the API audit log (see AU-2).
 
-**Configuration — remove kubeadmin and disable self-provisioning:** one-time script
-`04-gitops/05-lock-down-access.sh`. It first checks that you are logged in through the IdP and are
-a platform admin through the `ocp-platform-admins` group, then runs:
+**Configuration — remove kubeadmin and disable self-provisioning:** one-time manual step
+([Access lock-down](../platform-configuration.md#access-lock-down)). First check that you are
+logged in through the IdP and are a platform admin through the `ocp-platform-admins` group
+(`oc whoami`, `oc get groups`), then run:
 
 ```bash
 oc patch clusterrolebinding.rbac self-provisioners -p '{"subjects": null}'
@@ -431,12 +432,13 @@ events.
 
 **Control intent (summary):** Show an approved system use notification before granting access.
 
-**Login page template** (kept outside Git as a reviewed file, `LOGIN_TEMPLATE_FILE`):
+**Login page template** (kept outside Git as a reviewed file):
 
 ```bash
 # Generate the default template, then add the approved GC system use notification
 oc adm create-login-template > login.html
-# 04-gitops/03-create-secrets.sh creates openshift-config/itsg33-login-template from it
+oc create secret generic itsg33-login-template -n openshift-config \
+  --from-file=login.html=login.html --dry-run=client -o yaml | oc apply -f -
 ```
 
 **Configuration — console banner, `oc login` message, and login page:** in Git. Files:
@@ -444,8 +446,9 @@ oc adm create-login-template > login.html
 `04-gitops/components/identity/oauth.yaml`.
 
 The `ConsoleNotification` and the `motd` ConfigMap are in Git. The OAuth resource refers to the
-`itsg33-login-template` Secret, which `04-gitops/03-create-secrets.sh` creates from the reviewed
-HTML file (`LOGIN_TEMPLATE_FILE`), because a broken template stops every login.
+`itsg33-login-template` Secret, which is created by hand from the reviewed HTML file
+([Secrets kept outside Git](../platform-configuration.md#secrets-kept-outside-git)), because a
+broken template stops every login.
 
 See [how the configuration is applied](../platform-configuration.md).
 

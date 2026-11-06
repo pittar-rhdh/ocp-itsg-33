@@ -1,6 +1,7 @@
 # Advanced Cluster Management: governance policies (installs multicluster-engine itself)
 # Channel: confirm against the mirrored catalog with
-#   01-mirror/03-list-operator-channels.sh advanced-cluster-management
+#   oc get packagemanifest advanced-cluster-management -n openshift-marketplace \
+#     -o jsonpath='{.status.channels[*].name}'
 # The catalog source name is set for every Subscription by the cluster overlay.
 apiVersion: v1
 kind: Namespace

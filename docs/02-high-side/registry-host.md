@@ -2,6 +2,9 @@
 
 [← Phase 2](index.md)
 
+> **Examples only — not validated.** The commands and configuration on this page are examples.
+> Test and adapt them before use. See [Validation status](../reference/validation-status.md).
+
 The registry host serves every image the cluster runs. If it is compromised, everything that
 pulls from it is compromised, so build it as a security-relevant platform component, not as a
 utility server.
@@ -28,7 +31,7 @@ same zone (MRZ) and the same SA&A.
 | Disk encryption | LUKS for `/data` (and the OS disk where policy requires), with keys bound to TPM2 or Tang (SC-28) |
 | Patching | From the departmental high-side RHEL content source (see [Supporting services](#supporting-services-checklist)) on the monthly cycle (SI-2) |
 | Hardening baseline | The departmental RHEL 9 baseline, or a SCAP Security Guide profile (see below) |
-| umask | Red Hat lists `umask 0022` as a prerequisite on hosts that run oc-mirror; `06-disk-to-mirror.sh` sets it for its own run. A baseline that enforces a stricter login umask is fine. |
+| umask | Red Hat lists `umask 0022` as a prerequisite on hosts that run oc-mirror. Set it in the shell that runs `oc-mirror` (see [Populate the registry](populate-registry.md#disk-to-mirror)); a baseline that enforces a stricter login umask is fine. |
 
 ### Hardening with OpenSCAP
 
@@ -78,17 +81,18 @@ sudo install -d -o quay -g quay -m 0750 /data/quay /data/ocp
 
 | Path | Content | Back up? |
 |---|---|---|
-| `/data/quay/install` (`QUAY_ROOT`) | Registry configuration, certificates, installer files | Yes |
-| `/data/quay/storage` (`QUAY_STORAGE`) | Image blobs | Yes, or be ready to re-import every transfer |
-| `/data/quay/sqlite` (`QUAY_SQLITE`) | Registry database (users, robots, permissions, tags) | Yes, consistently with storage |
+| `/data/quay/install` | Registry configuration, certificates, installer files | Yes |
+| `/data/quay/storage` | Image blobs | Yes, or be ready to re-import every transfer |
+| `/data/quay/sqlite` | Registry database (users, robots, permissions, tags) | Yes, consistently with storage |
 | `/data/ocp/transfers` | Accepted transfer packages | Records only, after import |
 | `/data/ocp/oc-mirror-cache` | oc-mirror cache | **Yes**, after every import (Red Hat requirement) |
 | `/data/ocp/oc-mirror` | oc-mirror workspace | Not required (regenerated each run), but never delete or modify it |
 | `/data/ocp/cluster-resources` | IDMS, ITMS, catalogs, signatures per import | Yes |
-| `/data/ocp/imports.tsv` | Import ledger | Yes (evidence) |
+| `/data/ocp/tools/<version>` | `oc`, `oc-mirror`, `butane`, mirror registry installer from accepted transfers | Optional (re-creatable from transfers) |
+| `/data/ocp/installer/<version>` | Extracted `openshift-install-fips` and `release.env` | Yes |
+| `/data/ocp/import-log.md` | Import log (see [Accept a transfer](accept-transfer.md#the-import-log)) | Yes (evidence) |
 
 Mount `/data` as a dedicated filesystem so a full registry can't fill `/`.
-`02-check-registry-host.sh` warns if it isn't.
 
 ## Network and firewall
 
@@ -121,7 +125,7 @@ Suggested audit watches (add to `/etc/audit/rules.d/50-ocp-registry.rules`):
 
 ```text
 -w /data/quay/install/quay-config/ -p wa -k ocp-registry-config
--w /data/ocp/imports.tsv -p wa -k ocp-import-ledger
+-w /data/ocp/import-log.md -p wa -k ocp-import-log
 -w /home/quay/.config/ocp-registry/ -p rwa -k ocp-registry-credentials
 -w /etc/pki/ocp-registry/ -p rwa -k ocp-registry-tls
 -w /etc/pki/ocp-transfer/ -p wa -k ocp-transfer-key
@@ -133,15 +137,21 @@ Request a server certificate from the departmental PKI:
 
 | Field | Value |
 |---|---|
-| Subject alternative name | `DNS:<REGISTRY_FQDN>` (the name clients use; IP-only access isn't supported) |
+| Subject alternative name | `DNS:registry.example.gc.ca` (the name clients use; IP-only access isn't supported) |
 | Key | RSA 3072+ or ECDSA P-256/P-384, generated on the host, never leaves it |
 | Extended key usage | `serverAuth` |
 | Signature | SHA-256 or stronger |
-| Validity | Per departmental policy; track expiry (`02-check-registry-host.sh` warns 60 days ahead) |
+| Validity | Per departmental policy; track expiry and plan renewal at least 60 days ahead |
 
-Place the files at the paths in `settings.env`: `TLS_CERT` (server certificate followed by
-intermediates), `TLS_KEY` (mode `0600`), and `TLS_CA_BUNDLE` (the root and any intermediates
-clients must trust). The same CA bundle becomes `additionalTrustBundle` in Phase 3.
+Place the files on the registry host:
+
+| File | Content |
+|---|---|
+| `/etc/pki/ocp-registry/registry.crt` | Server certificate followed by any intermediate CA certificates |
+| `/etc/pki/ocp-registry/registry.key` | Private key, mode `0600`, readable by `quay` |
+| `/etc/pki/ocp-registry/ca-bundle.crt` | Root (and intermediate) CA certificates that clients must trust |
+
+The same CA bundle becomes `additionalTrustBundle` in `install-config.yaml` (Phase 3).
 
 ## Supporting services checklist
 
@@ -160,16 +170,56 @@ Confirm before installing:
       process). The registry, provisioner, and other high-side RHEL hosts need it for installation
       and monthly patching. This repository's transfers carry OpenShift content only.
 - [ ] **Backup:** a backup target for `/data/quay` and `/data/ocp`.
-- [ ] **Transfer public key:** installed at `TRANSFER_VERIFY_KEY`, fingerprint confirmed by a
-      second channel.
+- [ ] **Transfer public key:** installed at `/etc/pki/ocp-transfer/ocp-transfer-key.pub.asc`,
+      fingerprint confirmed by a second channel.
 
-Then run:
+## Readiness checks
+
+Run these as `quay` before installing, and again monthly as a configuration check (CM-6, SC-17,
+AU-8). Keep the output as evidence.
 
 ```bash
-sudo -iu quay
-02-high-side/02-check-registry-host.sh
+# Operating system, FIPS, SELinux, audit
+cat /etc/redhat-release                       # Red Hat Enterprise Linux release 9.x
+cat /proc/sys/crypto/fips_enabled             # 1
+getenforce                                    # Enforcing
+systemctl is-active auditd firewalld chronyd  # active (x3)
+
+# Rootless prerequisites
+id -un                                        # quay, not root
+grep "^$(id -un):" /etc/subuid /etc/subgid    # one entry in each
+loginctl show-user "$(id -un)" -p Linger      # Linger=yes
+
+# DNS (forward and reverse) and time
+getent ahostsv4 registry.example.gc.ca        # resolves to an address of this host
+getent hosts <registry-ip>                    # returns registry.example.gc.ca
+chronyc -n tracking | grep 'Leap status'      # Normal
+
+# Storage and firewall
+findmnt --target /data/quay                   # a dedicated mount, not / or /home
+df -h /data/quay                              # about 1 TiB free or more
+firewall-cmd --list-all --zone=registry       # 8443/tcp and the expected sources
+
+# Transfer verification key
+gpg --show-keys --with-fingerprint /etc/pki/ocp-transfer/ocp-transfer-key.pub.asc
 ```
 
-It checks the OS, FIPS, SELinux, auditd, tools, rootless prerequisites, DNS, time, storage,
-firewall, the transfer key, and the certificate (name, chain, key, algorithm, expiry, key
-permissions). Run it again monthly as a configuration check, and keep the output.
+Check the certificate before installing and after every renewal:
+
+```bash
+cd /etc/pki/ocp-registry
+stat -c '%a %U' registry.key                                  # 600 quay
+# Certificate and key match (the two digests are identical)
+openssl x509 -in registry.crt -noout -pubkey | openssl sha256
+openssl pkey -in registry.key -pubout | openssl sha256
+# Name, chain, purpose
+openssl x509 -in registry.crt -noout -checkhost registry.example.gc.ca   # "does match"
+openssl verify -purpose sslserver -CAfile ca-bundle.crt -untrusted registry.crt registry.crt
+# Algorithm, key size, expiry
+openssl x509 -in registry.crt -noout -text | grep -E 'Signature Algorithm|Public-Key' | sort -u
+openssl x509 -in registry.crt -noout -enddate -checkend $((60*86400))
+```
+
+- The signature algorithm must not be SHA-1 or MD5. RSA keys must be at least 2048 bits;
+  ITSP.40.111 recommends 3072 or more for use beyond 2030.
+- `-checkend` prints `Certificate will expire` if fewer than 60 days remain: start renewal.

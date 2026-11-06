@@ -1,7 +1,7 @@
 # One APIServer resource for every API server setting, so that a single file
 # owns it: audit policy (AU), TLS profile (SC-8, SC-13), and etcd encryption
-# (SC-28). Phase 3 (06-post-install.sh --configure) set the audit profile and
-# encryption on Day 1; from now on Git owns them.
+# (SC-28). The Phase 3 post-install steps set the audit profile and encryption
+# on Day 1; from now on Git owns them.
 apiVersion: config.openshift.io/v1
 kind: APIServer
 metadata:

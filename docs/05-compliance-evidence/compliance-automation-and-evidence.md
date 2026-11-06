@@ -189,12 +189,13 @@ evidence/
     README.md               index mapping each artifact to ITSG-33 controls
 ```
 
-### Example collection script (starter)
+### Example collection commands (starter)
+
+Example `oc` and `jq` commands that fill the bundle layout above; extend them per control family.
+Run them from an admin host logged in with a read-only account (for example a member of
+`ocp-security-auditors`), or from a scheduled pipeline.
 
 ```bash
-#!/usr/bin/env bash
-# collect-evidence.sh — starter script; extend per control family.
-set -euo pipefail
 CLUSTER=$(oc get infrastructure cluster -o jsonpath='{.status.infrastructureName}')
 OUT="evidence/${CLUSTER}/$(date +%F)"
 mkdir -p "${OUT}"/{00-metadata,01-compliance-operator,04-configuration,05-rbac,06-logging,07-integrity,08-backup}

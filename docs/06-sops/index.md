@@ -2,7 +2,7 @@
 
 [← Back to main](../index.md)
 
-> **Examples only — not validated.** The scripts and configuration in this phase are examples.
+> **Examples only — not validated.** The commands and procedures in this phase are examples.
 > They have not been run against a real Red Hat subscription, air-gapped environment, or
 > cluster. Test and adapt them before use. See [Validation status](../reference/validation-status.md).
 

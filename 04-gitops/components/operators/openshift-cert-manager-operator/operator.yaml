@@ -1,6 +1,7 @@
 # cert-manager: certificates from the departmental PKI (install before External Secrets)
 # Channel: confirm against the mirrored catalog with
-#   01-mirror/03-list-operator-channels.sh openshift-cert-manager-operator
+#   oc get packagemanifest openshift-cert-manager-operator -n openshift-marketplace \
+#     -o jsonpath='{.status.channels[*].name}'
 # The catalog source name is set for every Subscription by the cluster overlay.
 apiVersion: v1
 kind: Namespace

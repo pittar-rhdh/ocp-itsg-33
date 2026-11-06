@@ -2,53 +2,86 @@
 
 [← Phase 1](index.md)
 
-`05-mirror-to-disk.sh` runs the `oc-mirror` v2 **mirror-to-disk** workflow: it pulls everything in
-`imageset-config.yaml` from Red Hat and writes it to archive files that can be carried to the
-high side.
+> **Examples only — not validated.** Test and adapt the commands before use. See
+> [Validation status](../reference/validation-status.md).
+
+The `oc-mirror` v2 **mirror-to-disk** workflow pulls everything in
+`01-mirror/imageset-config.yaml` from Red Hat and writes it to archive files that can be carried
+to the high side. Run it from a clean checkout of the reviewed, committed configuration.
+
+## Before you start
 
 ```bash
-01-mirror/05-mirror-to-disk.sh --dry-run    # optional: list what would be mirrored
-01-mirror/05-mirror-to-disk.sh
+cd ~/ocp-itsg-33
+git status --porcelain            # must be empty: the run must match a known commit
+ls /data/mirror/archive/mirror_*.tar 2>/dev/null   # must be empty
 ```
 
-The script runs:
+`oc-mirror` reuses the same archive file names on every run, so archives left from a previous
+run must be packaged (or deliberately moved away) first; mixing runs would lose content.
+
+## Dry run
+
+A dry run lists what would be mirrored without downloading it. Use it to estimate size and to
+review the image list before a real run:
 
 ```bash
+umask 0022
 oc-mirror --v2 \
   --config 01-mirror/imageset-config.yaml \
-  --cache-dir "${MIRROR_CACHE_DIR}" \
-  --authfile "${REGISTRY_AUTH_FILE}" \
-  file://"${MIRROR_ARCHIVE_DIR}"
+  --cache-dir /data/mirror/cache \
+  --authfile ~/.secrets/pull-secret.json \
+  --dry-run \
+  file:///data/mirror/archive
+less /data/mirror/archive/working-dir/dry-run/mapping.txt
 ```
 
-Before it starts, it checks that:
+## Run
 
-- the committed `imageset-config.yaml` matches `versions.env` (`04-render-imageset-config.sh --check`),
-- there are no `mirror_*.tar` archives left from a previous run that haven't been packaged yet.
-  `oc-mirror` reuses the same file names on every run, so mixing runs would lose content.
+```bash
+umask 0022                        # Red Hat prerequisite for hosts that run oc-mirror
+mkdir -p /data/mirror/archive/logs
+RUN_ID=$(date -u +%Y%m%dT%H%M%SZ)
+oc-mirror --v2 --version
+oc-mirror --v2 \
+  --config 01-mirror/imageset-config.yaml \
+  --cache-dir /data/mirror/cache \
+  --authfile ~/.secrets/pull-secret.json \
+  file:///data/mirror/archive 2>&1 | tee /data/mirror/archive/logs/mirror-to-disk-${RUN_ID}.log
+
+# Record what the run was built from (goes on the transfer record and in MANIFEST.json).
+git rev-parse HEAD
+sha256sum 01-mirror/imageset-config.yaml
+ls -lh /data/mirror/archive/mirror_*.tar
+```
+
+Check that `oc-mirror` exited without errors and that no error file was written under
+`working-dir/logs/`. Then back up the cache (see [Incremental runs](#incremental-runs)).
 
 ## Output
 
 ```text
-${MIRROR_ARCHIVE_DIR}/
+/data/mirror/archive/
   mirror_000001.tar ...          archives for this run (moved into the transfer package)
   working-dir/                   oc-mirror metadata and history (keep)
     isc_pinned_<time>.yaml       ISC with catalogs pinned by digest (observed file name)
     disc_pinned_<time>.yaml      matching delete configuration
     dry-run/mapping.txt          image list (dry runs)
   logs/mirror-to-disk-<time>.log full log of each run (goes into the transfer package)
-  last-run.env                   run ID, git commit, and ISC checksum (used by packaging)
-${MIRROR_CACHE_DIR}/             blob cache (keep, and back up)
+/data/mirror/cache/              blob cache (keep, and back up)
 ```
 
 ## Incremental runs
 
 `oc-mirror` keeps a history in `working-dir/`. Each run only archives content that is **new since
 the last successful run**: a run with no changes produces an archive of a few hundred KiB. To
-rebuild a delta from a specific date (for example, after a lost transfer), use:
+rebuild a delta from a specific date (for example, after a lost transfer), add `--since`:
 
 ```bash
-01-mirror/05-mirror-to-disk.sh --since 2026-10-01
+oc-mirror --v2 --config 01-mirror/imageset-config.yaml \
+  --cache-dir /data/mirror/cache --authfile ~/.secrets/pull-secret.json \
+  --since 2026-10-01 \
+  file:///data/mirror/archive
 ```
 
 Consequences:
@@ -65,9 +98,9 @@ Consequences:
 
 ## Archive size
 
-If `MIRROR_ARCHIVE_SIZE_GB` is set, it is rendered as `archiveSize` and the script adds
-`--strict-archive`, so no archive file exceeds the limit (the run fails instead). Use it when the
-media or cross-domain solution has a per-file limit.
+If `archiveSize` is set in `imageset-config.yaml`, add `--strict-archive` to the `oc-mirror`
+command so that no archive file exceeds the limit (the run fails instead). Use it when the media
+or cross-domain solution has a per-file limit.
 
 ## Optional: verify image signatures while mirroring
 
@@ -75,18 +108,17 @@ By default, `oc-mirror` copies image signatures but doesn't enforce them on the 
 OpenShift verifies the **release** payload signature on the cluster, but operator and additional
 images are not checked at that point. To check Red Hat signatures for images from
 `registry.redhat.io` and `registry.access.redhat.com` **before** they enter a transfer (SA-12,
-SI-7):
+SI-7), add these flags to the `oc-mirror` command:
 
 ```bash
-# 01-mirror/settings.local.env
-MIRROR_VERIFY_SIGNATURES=true
-# MIRROR_SIGNATURE_POLICY=/path/to/policy.json   # default: 01-mirror/signature-policy.json
+  --secure-policy=true \
+  --policy 01-mirror/signature-policy.json \
+  --registries.d /etc/containers/registries.d \
 ```
 
-This adds `--secure-policy=true --policy 01-mirror/signature-policy.json --registries.d
-/etc/containers/registries.d`. The policy requires a signature by the Red Hat release key for the
-two Red Hat registries and accepts everything else (the release payload on `quay.io` is verified
-on the cluster).
+The example policy, `01-mirror/signature-policy.json`, requires a signature by the Red Hat
+release key (`/etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release`) for the two Red Hat registries and
+accepts everything else (the release payload on `quay.io` is verified on the cluster).
 
 > **Test before relying on it.** Run a dry run with signature verification on, against the
 > exact content set, before using it for a real import. It depends on the
@@ -94,13 +126,32 @@ on the cluster).
 > fails verification, **don't** turn verification off to get past it: record the image and raise
 > it with Red Hat support.
 
+## RHACS vulnerability data
+
+RHACS Central on the high side needs offline vulnerability data that matches its version
+(RA-5(2), SI-5). Download it with `roxctl` (see [Tools](workstation.md#tools)) on the
+vulnerability-feed cadence (Red Hat's RHACS offline-mode guidance is at least once per day), not
+only with platform imports:
+
+```bash
+RHACS_VERSION=<rhacs-version>     # same version as the mirrored rhacs-operator
+OUT=/data/mirror/rhacs/scanner-vuln-updates-${RHACS_VERSION}-$(date -u +%Y%m%d).zip
+/data/mirror/tools/4.22.18/roxctl scanner download-db \
+  --version "${RHACS_VERSION}" \
+  --skip-central \
+  --force \
+  --scanner-db-file "${OUT}"
+sha256sum "${OUT}"
+```
+
+The file goes into the next transfer package (`rhacs/`).
+
 ## Troubleshooting
 
 | Symptom | Likely cause and fix |
 |---|---|
-| `unauthorized` / `invalid username/password` for `registry.redhat.io` | Pull secret missing, expired, or not at `REGISTRY_AUTH_FILE` |
-| `imageset-config.yaml is out of date` | `versions.env` changed; run `04-render-imageset-config.sh` and commit |
-| `archive(s) from a previous run are still in ...` | Package the previous run (`07-package-transfer.sh`) or, if it was abandoned, move the archives away deliberately |
+| `unauthorized` / `invalid username/password` for `registry.redhat.io` | Pull secret missing, expired, or not the file passed with `--authfile` |
 | Default channel error for a package | You listed channels without the package's default channel; see [ImageSetConfiguration](imageset-configuration.md#operator-entries) |
+| "Multiple channel heads" error | A `minVersion` cut the operator's update graph; widen the range |
 | Run is much larger than expected | Check the OpenShift version range and any `minVersion`; review `dry-run/mapping.txt` |
 | Disk full | Cache and archives both need space on the first run; see [sizing](workstation.md#storage-sizing) |

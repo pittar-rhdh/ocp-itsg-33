@@ -44,7 +44,7 @@ architecture decision **AD-03**.
 
 The `gc-sso` OpenID provider with `preferred_username`, `name`, `email` and `groups` claims, the
 session limits (AC-11, AC-12) and the login template (AC-8). The client secret and the IdP CA are
-created outside Git by `04-gitops/03-create-secrets.sh`.
+created outside Git ([Secrets kept outside Git](../platform-configuration.md#secrets-kept-outside-git)).
 
 See [how the configuration is applied](../platform-configuration.md).
 

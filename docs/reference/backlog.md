@@ -22,8 +22,9 @@ air-gapped cluster, with the same ITSG-33 treatment as the rest of the platform.
 | 5 — Evidence | Compliance Operator and RHACS coverage of GPU nodes; evidence that only approved models and images run (CM-11, SA-12) |
 | 6 — SOPs | Driver and operator upgrades tied to OpenShift z-streams; GPU node troubleshooting (`nvidia-smi` through `oc debug`, DCGM metrics) |
 
-Placeholders for the operator packages are already commented out in
-[`versions.env`](versions.md) (`AI_OPERATORS`).
+When this work starts, add the packages (`nfd`, `gpu-operator-certified` from the certified
+catalog, `rhods-operator`) to `01-mirror/imageset-config.yaml` and record them in
+[Versions and pinned content](versions.md).
 
 ## Other deferred items
 

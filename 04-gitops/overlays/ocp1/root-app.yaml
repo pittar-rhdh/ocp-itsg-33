@@ -1,6 +1,6 @@
-# Root ("app of apps") Application for cluster ocp1. Applied once by
-# 04-gitops/01-bootstrap-gitops.sh; everything else comes from Git.
-# Set repoURL to GIT_REMOTE_URL (02-high-side/settings.env) and keep it the
+# Root ("app of apps") Application for cluster ocp1. Applied once by hand
+# during the bootstrap; everything else comes from Git.
+# Set repoURL to the departmental Git URL of this repository and keep it the
 # same in apps/kustomization.yaml and gitops/kustomization.yaml.
 apiVersion: argoproj.io/v1alpha1
 kind: Application

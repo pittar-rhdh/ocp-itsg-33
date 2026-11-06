@@ -1,7 +1,7 @@
 # Short-term, on-cluster log search (AD-07) on the departmental S3 endpoint
 # (AD-14). The SIEM is the system of record for retention (AU-11).
 #
-# Created outside Git by 04-gitops/03-create-secrets.sh:
+# Created outside Git (docs: Platform configuration, Secrets kept outside Git):
 #   Secret openshift-logging/logging-loki-s3 (access_key_id, access_key_secret,
 #   bucketnames, endpoint, region)
 # The cluster overlay sets the storage class of the vendor CSI driver (AD-13).

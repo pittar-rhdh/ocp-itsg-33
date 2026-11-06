@@ -1,7 +1,7 @@
 # Built-in OAuth server with the departmental OIDC identity provider (AD-03),
 # session limits, and the login page with the system use notification.
 #
-# Created outside Git by 04-gitops/03-create-secrets.sh (never committed):
+# Created outside Git (docs: Platform configuration, Secrets kept outside Git) (never committed):
 #   Secret    openshift-config/gc-sso-client-secret  (key: clientSecret)
 #   ConfigMap openshift-config/gc-sso-ca             (key: ca.crt, IdP CA bundle)
 # The login template Secret comes from the system-use-notification component.

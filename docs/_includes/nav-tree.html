@@ -1,0 +1,49 @@
+{% assign current_url = page.url | replace: '/index.html', '/' %}
+<ul class="nav-list nav-level-{{ include.level | default: 0 }}">
+  {% for item in include.items %}
+    {% if item.children %}
+      {% assign has_active = false %}
+      {% for child in item.children %}
+        {% if child.url %}
+          {% assign c_url = child.url | replace: '/index.html', '/' %}
+          {% if c_url == current_url %}
+            {% assign has_active = true %}
+          {% endif %}
+        {% endif %}
+        {% if child.children %}
+          {% for gchild in child.children %}
+            {% assign gc_url = gchild.url | replace: '/index.html', '/' %}
+            {% if gc_url == current_url %}
+              {% assign has_active = true %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      {% endfor %}
+      <li class="nav-group{% if has_active %} has-active{% endif %}">
+        <details class="nav-details"{% if has_active %} open{% endif %}>
+          <summary class="nav-summary">
+            <span class="nav-summary-label">{{ item.title }}</span>
+            <svg class="nav-chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+              <path fill="currentColor" d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06Z"/>
+            </svg>
+          </summary>
+          {% assign next_level = include.level | default: 0 | plus: 1 %}
+          {% include nav-tree.html items=item.children level=next_level %}
+        </details>
+      </li>
+    {% else %}
+      {% assign item_url = item.url | replace: '/index.html', '/' %}
+      {% assign is_active = false %}
+      {% if item_url == current_url %}
+        {% assign is_active = true %}
+      {% endif %}
+      <li class="nav-item">
+        <a class="nav-link{% if is_active %} is-active{% endif %}"
+           href="{{ item.url | relative_url }}"
+           {% if is_active %}aria-current="page"{% endif %}>
+          {{ item.title }}
+        </a>
+      </li>
+    {% endif %}
+  {% endfor %}
+</ul>

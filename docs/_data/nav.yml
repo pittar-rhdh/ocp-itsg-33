@@ -1,0 +1,146 @@
+- title: Home
+  url: /
+
+- title: 0 · Architecture
+  children:
+    - title: ITSG-33 Overview
+      url: /00-architecture/itsg-33-overview.html
+    - title: Reference Architecture
+      url: /00-architecture/reference-architecture.html
+    - title: Architecture Decisions
+      url: /00-architecture/architecture-decisions.html
+    - title: Shared Responsibility
+      url: /00-architecture/shared-responsibility.html
+
+- title: 1 · Content Mirroring
+  children:
+    - title: Overview
+      url: /01-mirroring/
+    - title: Mirror Workstation
+      url: /01-mirroring/workstation.html
+    - title: ImageSetConfiguration
+      url: /01-mirroring/imageset-configuration.html
+    - title: Mirror to Disk
+      url: /01-mirroring/mirror-to-disk.html
+    - title: Packaging and Transfer
+      url: /01-mirroring/packaging-and-transfer.html
+    - title: Ongoing Imports
+      url: /01-mirroring/ongoing-imports.html
+
+- title: 2 · High-Side Setup
+  children:
+    - title: Overview
+      url: /02-high-side/
+    - title: Registry Host
+      url: /02-high-side/registry-host.html
+    - title: Accept a Transfer
+      url: /02-high-side/accept-transfer.html
+    - title: Mirror Registry
+      url: /02-high-side/mirror-registry.html
+    - title: Populate the Registry
+      url: /02-high-side/populate-registry.html
+
+- title: 3 · Cluster Install
+  children:
+    - title: Overview
+      url: /03-cluster-install/
+    - title: Prerequisites & Provisioner Host
+      url: /03-cluster-install/prerequisites.html
+    - title: install-config.yaml
+      url: /03-cluster-install/install-config.html
+    - title: Install-Time Security Settings
+      url: /03-cluster-install/install-time-security.html
+    - title: Run and Verify the Install
+      url: /03-cluster-install/run-install.html
+
+- title: 4 · ITSG-33 Configuration
+  children:
+    - title: Overview
+      url: /04-itsg33-configuration/
+    - title: GitOps Bootstrap
+      url: /04-itsg33-configuration/gitops-bootstrap.html
+    - title: Repository Layout
+      url: /04-itsg33-configuration/repository-layout.html
+    - title: Operators
+      url: /04-itsg33-configuration/operators.html
+    - title: Platform Configuration
+      url: /04-itsg33-configuration/platform-configuration.html
+    - title: ACM Governance
+      url: /04-itsg33-configuration/acm-governance.html
+    - title: Control Families
+      children:
+        - title: Overview
+          url: /04-itsg33-configuration/controls/
+        - title: AC · Access Control
+          url: /04-itsg33-configuration/controls/ac-access-control.html
+        - title: AU · Audit & Accountability
+          url: /04-itsg33-configuration/controls/au-audit-and-accountability.html
+        - title: CA · Security Assessment & Auth
+          url: /04-itsg33-configuration/controls/ca-security-assessment-and-authorization.html
+        - title: CM · Configuration Management
+          url: /04-itsg33-configuration/controls/cm-configuration-management.html
+        - title: CP · Contingency Planning
+          url: /04-itsg33-configuration/controls/cp-contingency-planning.html
+        - title: IA · Identification & Auth
+          url: /04-itsg33-configuration/controls/ia-identification-and-authentication.html
+        - title: IR · Incident Response
+          url: /04-itsg33-configuration/controls/ir-incident-response.html
+        - title: RA · Risk Assessment
+          url: /04-itsg33-configuration/controls/ra-risk-assessment.html
+        - title: SA · System & Services Acq
+          url: /04-itsg33-configuration/controls/sa-system-and-services-acquisition.html
+        - title: SC · System & Comms Protection
+          url: /04-itsg33-configuration/controls/sc-system-and-communications-protection.html
+        - title: SI · System & Info Integrity
+          url: /04-itsg33-configuration/controls/si-system-and-information-integrity.html
+        - title: Operational & Management
+          url: /04-itsg33-configuration/controls/operational-and-management-families.html
+
+- title: 5 · Compliance & Evidence
+  children:
+    - title: Overview
+      url: /05-compliance-evidence/
+    - title: Compliance Automation & Evidence
+      url: /05-compliance-evidence/compliance-automation-and-evidence.html
+    - title: Scan Review & Remediation
+      url: /05-compliance-evidence/scan-review-and-remediation.html
+    - title: Reporting
+      url: /05-compliance-evidence/reporting.html
+    - title: Evidence Collection
+      url: /05-compliance-evidence/evidence-collection.html
+    - title: Control Traceability Matrix
+      url: /05-compliance-evidence/control-traceability-matrix.html
+
+- title: 6 · Standard Operating Procedures
+  children:
+    - title: Overview
+      url: /06-sops/
+    - title: Deployment Checklist
+      url: /06-sops/deployment-checklist.html
+    - title: Content Import
+      url: /06-sops/content-import.html
+    - title: Upgrades
+      url: /06-sops/upgrades.html
+    - title: Certificate Rotation
+      url: /06-sops/certificate-rotation.html
+    - title: Backup and Restore
+      url: /06-sops/backup-and-restore.html
+    - title: Access Management
+      url: /06-sops/access-management.html
+    - title: Security Operations
+      url: /06-sops/security-operations.html
+    - title: Node Management
+      url: /06-sops/node-management.html
+    - title: Troubleshooting
+      url: /06-sops/troubleshooting.html
+
+- title: Reference
+  children:
+    - title: Versions & Pinned Content
+      url: /reference/versions.html
+    - title: Validation Status & Sources
+      url: /reference/validation-status.html
+    - title: Backlog & Future Scope
+      url: /reference/backlog.html
+    - title: References
+      url: /reference/references.html

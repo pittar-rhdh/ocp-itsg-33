@@ -1,3 +1,12 @@
+title: "OCP 4.22 Air-Gapped · ITSG-33"
+description: "OpenShift 4.22 on bare metal, air-gapped, configured and evidenced for ITSG-33 (PBMM)."
 remote_theme: pages-themes/primer@v0.6.0
 plugins:
-- jekyll-remote-theme # add this line to the plugins list if you already have one
+  - jekyll-remote-theme
+  - jekyll-seo-tag
+
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
